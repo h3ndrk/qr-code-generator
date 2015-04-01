@@ -59,3 +59,121 @@ void qr_set_pixel(gint x, gint y, gboolean value)
 {
 	g_array_index(qr_code, gboolean, y * qr_code_size + x) = value;
 }
+
+void qr_render_code(gchar *input)
+{
+	guint i = 0;
+	encoding_mode_t encoding_mode = NUMERIC;
+	
+	if(input == NULL)
+	{
+		return;
+	}
+	
+	// test for numeric
+	for(i = 0; i < strlen(input); i++)
+	{
+		if(!(input[i] == '0' ||
+			input[i] == '1' ||
+			input[i] == '2' ||
+			input[i] == '3' ||
+			input[i] == '4' ||
+			input[i] == '5' ||
+			input[i] == '6' ||
+			input[i] == '7' ||
+			input[i] == '8' ||
+			input[i] == '9'))
+		{
+			encoding_mode = ALPHANUMERIC;
+			break;
+		}
+	}
+	
+	if(encoding_mode != NUMERIC)
+	{
+		printf("Numeric does not match\n");
+		
+		// test for alphanumeric
+		for(i = 0; i < strlen(input); i++)
+		{
+			if(!(input[i] == '0' ||
+				input[i] == '1' ||
+				input[i] == '2' ||
+				input[i] == '3' ||
+				input[i] == '4' ||
+				input[i] == '5' ||
+				input[i] == '6' ||
+				input[i] == '7' ||
+				input[i] == '8' ||
+				input[i] == '9' ||
+				input[i] == 'A' ||
+				input[i] == 'B' ||
+				input[i] == 'C' ||
+				input[i] == 'D' ||
+				input[i] == 'E' ||
+				input[i] == 'F' ||
+				input[i] == 'G' ||
+				input[i] == 'H' ||
+				input[i] == 'I' ||
+				input[i] == 'J' ||
+				input[i] == 'K' ||
+				input[i] == 'L' ||
+				input[i] == 'M' ||
+				input[i] == 'N' ||
+				input[i] == 'O' ||
+				input[i] == 'P' ||
+				input[i] == 'Q' ||
+				input[i] == 'R' ||
+				input[i] == 'S' ||
+				input[i] == 'T' ||
+				input[i] == 'U' ||
+				input[i] == 'V' ||
+				input[i] == 'W' ||
+				input[i] == 'X' ||
+				input[i] == 'Y' ||
+				input[i] == 'Z' ||
+				input[i] == ' ' ||
+				input[i] == '$' ||
+				input[i] == '%' ||
+				input[i] == '*' ||
+				input[i] == '+' ||
+				input[i] == '-' ||
+				input[i] == '.' ||
+				input[i] == '/' ||
+				input[i] == ':'))
+			{
+				encoding_mode = BYTE;
+				break;
+			}
+		}
+		
+		if(encoding_mode != ALPHANUMERIC)
+		{
+			printf("Alphanumeric does not match\n");
+		}
+	}
+	
+	switch(encoding_mode)
+	{
+		case NUMERIC:
+		{
+			printf("Numeric encoding\n");
+			break;
+		}
+		case ALPHANUMERIC:
+		{
+			printf("Alphanumeric encoding\n");
+			break;
+		}
+		case BYTE:
+		{
+			printf("Byte encoding\n");
+			break;
+		}
+		case KANJI:
+		{
+			printf("Kanji encoding\n");
+			break;
+		}
+	}
+}

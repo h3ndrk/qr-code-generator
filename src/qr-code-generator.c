@@ -31,10 +31,12 @@ int main(void)
 	
 	// gtk_main();
 	
-	qr_initialize_array(16);
-	qr_set_pixel(1, 1, TRUE);
-	printf("%i\n", qr_get_pixel(1, 1));
-	qr_free_array();
+	// qr_initialize_array(16);
+	// qr_set_pixel(1, 1, TRUE);
+	// printf("%i\n", qr_get_pixel(1, 1));
+	// qr_free_array();
+	
+	qr_render_code("Hello World");
 	
 	return 0;
 }
