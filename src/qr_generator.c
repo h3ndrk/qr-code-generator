@@ -24,7 +24,7 @@
 
 static GArray *qr_code = NULL;
 static gint qr_code_size = 0;
-static const gint qr_character_amount[] =
+static const guint qr_character_amount[] =
 {
 	41, 25, 17, 10,
 	34, 20, 14, 8,
@@ -187,6 +187,69 @@ static const gint qr_character_amount[] =
 	3993, 2420, 1663, 1024,
 	3057, 1852, 1273, 784
 };
+static const gchar qr_alphanumeric_converting[] =
+{
+	'0',
+	'1',
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'A',
+	'B',
+	'C',
+	'D',
+	'E',
+	'F',
+	'G',
+	'H',
+	'I',
+	'J',
+	'K',
+	'L',
+	'M',
+	'N',
+	'O',
+	'P',
+	'Q',
+	'R',
+	'S',
+	'T',
+	'U',
+	'V',
+	'W',
+	'X',
+	'Y',
+	'Z',
+	' ',
+	'$',
+	'%',
+	'*',
+	'+',
+	'-',
+	'.',
+	'/',
+	':'
+};
+
+gint qr_convert_char_to_int_alphanumeric(gchar character)
+{
+	gint i = 0;
+	
+	for(i = 0; i < 45; i++)
+	{
+		if(qr_alphanumeric_converting[i] == character)
+		{
+			return i;
+		}
+	}
+	
+	return 42; // return '.'
+}
 
 void qr_initialize_array(gint size)
 {
@@ -226,19 +289,28 @@ void qr_set_pixel(gint x, gint y, gboolean value)
 void qr_render_code(gchar *input, error_correction_t error_correction)
 {
 	guint i = 0;
+	gint j = 0;
 	encoding_mode_t encoding_mode = NUMERIC;
 	gint qr_version = 0;
 	gint qr_size = 0;
 	gint error_correction_offset = 0;
 	gint encoding_mode_offset = 0;
+	GArray *encoded_data = g_array_new(FALSE, TRUE, sizeof(gboolean));
+	guint input_size = 0;
+	gboolean pseudo_true = TRUE;
+	gboolean pseudo_false = FALSE;
+	gboolean temp_bit = FALSE;
+	guint temp_alphanumeric = 0;
 	
 	if(input == NULL)
 	{
 		return;
 	}
 	
+	input_size = strlen(input);
+	
 	// test for numeric
-	for(i = 0; i < strlen(input); i++)
+	for(i = 0; i < input_size; i++)
 	{
 		if(!(input[i] == '0' ||
 			input[i] == '1' ||
@@ -261,7 +333,7 @@ void qr_render_code(gchar *input, error_correction_t error_correction)
 		// printf("Numeric does not match\n");
 		
 		// test for alphanumeric
-		for(i = 0; i < strlen(input); i++)
+		for(i = 0; i < input_size; i++)
 		{
 			if(!(input[i] == '0' ||
 				input[i] == '1' ||
@@ -374,7 +446,7 @@ void qr_render_code(gchar *input, error_correction_t error_correction)
 	
 	for(qr_version = 1; qr_version <= 40; qr_version++)
 	{
-		if(strlen(input) <= qr_character_amount[(qr_version - 1) * 16 + error_correction_offset + encoding_mode_offset])
+		if(input_size <= qr_character_amount[(qr_version - 1) * 16 + error_correction_offset + encoding_mode_offset])
 		{
 			break;
 		}
@@ -385,4 +457,278 @@ void qr_render_code(gchar *input, error_correction_t error_correction)
 	qr_size = 21 + (qr_version - 1) * 4;
 	
 	printf("QR Code size: %i\n", qr_size);
+	
+	switch(encoding_mode)
+	{
+		case NUMERIC:
+		{
+			printf("Mode indicator: 0001\n");
+			
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_true);
+			
+			break;
+		}
+		case ALPHANUMERIC:
+		{
+			printf("Mode indicator: 0010\n");
+			
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_true);
+			g_array_append_val(encoded_data, pseudo_false);
+			
+			break;
+		}
+		case BYTE:
+		{
+			printf("Mode indicator: 0100\n");
+			
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_true);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			
+			break;
+		}
+		case KANJI:
+		{
+			printf("Mode indicator: 1000\n");
+			
+			g_array_append_val(encoded_data, pseudo_true);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			g_array_append_val(encoded_data, pseudo_false);
+			
+			break;
+		}
+	}
+	
+	// printf("Number = %i\n", input_size);
+	
+	// for(j = 8; j >= 0; j--)
+	// {
+	// 	printf("%i: %i\n", j, NTH_BIT(input_size, j));
+	// }
+	
+	if(qr_version > 0 && qr_version < 10)
+	{
+		switch(encoding_mode)
+		{
+			case NUMERIC:
+			{
+				printf("Amount of bits: 10\n");
+				
+				for(j = 9; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case ALPHANUMERIC:
+			{
+				printf("Amount of bits: 9\n");
+				
+				for(j = 8; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case BYTE:
+			{
+				printf("Amount of bits: 8\n");
+				
+				for(j = 7; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case KANJI:
+			{
+				printf("Amount of bits: 8\n");
+				
+				for(j = 7; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+		}
+	}
+	else if(qr_version > 9 && qr_version < 27)
+	{
+		switch(encoding_mode)
+		{
+			case NUMERIC:
+			{
+				printf("Amount of bits: 12\n");
+				
+				for(j = 11; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case ALPHANUMERIC:
+			{
+				printf("Amount of bits: 11\n");
+				
+				for(j = 10; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case BYTE:
+			{
+				printf("Amount of bits: 16\n");
+				
+				for(j = 15; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case KANJI:
+			{
+				printf("Amount of bits: 10\n");
+				
+				for(j = 9; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+		}
+	}
+	else if(qr_version > 26 && qr_version < 41)
+	{
+		switch(encoding_mode)
+		{
+			case NUMERIC:
+			{
+				printf("Amount of bits: 14\n");
+				
+				for(j = 13; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case ALPHANUMERIC:
+			{
+				printf("Amount of bits: 13\n");
+				
+				for(j = 12; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case BYTE:
+			{
+				printf("Amount of bits: 16\n");
+				
+				for(j = 15; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+			case KANJI:
+			{
+				printf("Amount of bits: 12\n");
+				
+				for(j = 11; j >= 0; j--)
+				{
+					temp_bit = NTH_BIT(input_size, j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+				
+				break;
+			}
+		}
+	}
+	
+	switch(encoding_mode)
+	{
+		case ALPHANUMERIC:
+		{
+			for(i = 0; i < input_size; i += 2)
+			{
+				if(i + 1 == input_size) // odd number of characters
+				{
+					temp_alphanumeric = qr_convert_char_to_int_alphanumeric(input[i]);
+					
+					for(j = 5; j >= 0; j--)
+					{
+						temp_bit = NTH_BIT(temp_alphanumeric, j);
+						g_array_append_val(encoded_data, temp_bit);
+					}
+				}
+				else // even number of characters
+				{
+					temp_alphanumeric = (qr_convert_char_to_int_alphanumeric(input[i]) * 45) + qr_convert_char_to_int_alphanumeric(input[i + 1]);
+					
+					for(j = 10; j >= 0; j--)
+					{
+						temp_bit = NTH_BIT(temp_alphanumeric, j);
+						g_array_append_val(encoded_data, temp_bit);
+					}
+				}
+			}
+			
+			break;
+		}
+		case BYTE:
+		{
+			for(i = 0; i < input_size; i++)
+			{
+				for(j = 0; j < 8; j++)
+				{
+					temp_bit = NTH_BIT(input[i], j);
+					g_array_append_val(encoded_data, temp_bit);
+				}
+			}
+			
+			break;
+		}
+	}
+	
+	printf("Encoded data:\n");
+	
+	for(i = 0; i < encoded_data->len; i++)
+	{
+		printf("%i", g_array_index(encoded_data, gboolean, i));
+	}
+	
+	printf("\n");
+	
+	g_array_free(encoded_data, TRUE);
 }
