@@ -27,8 +27,8 @@ all: qr-code-generator
 
 # Compile main program
 
-qr-code-generator: init bin/obj/qr-code-generator.o bin/obj/gtk_window.o
-	$(CC) bin/obj/qr-code-generator.o bin/obj/gtk_window.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
+qr-code-generator: init bin/obj/qr-code-generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o
+	$(CC) bin/obj/qr-code-generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
 
 # Initializes directories
 
@@ -43,6 +43,9 @@ bin/obj/qr-code-generator.o: src/qr-code-generator.c
 
 bin/obj/gtk_window.o: src/gtk_window.c
 	$(CC) $(CFLAGS) -c -o bin/obj/gtk_window.o src/gtk_window.c $(LIBS)
+
+bin/obj/qr_generator.o: src/qr_generator.c
+	$(CC) $(CFLAGS) -c -o bin/obj/qr_generator.o src/qr_generator.c $(LIBS)
 
 # Clean
 

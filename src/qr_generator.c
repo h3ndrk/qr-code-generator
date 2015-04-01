@@ -18,23 +18,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gtk/gtk.h>
+#include <glib.h>
 
-#include "gtk_window.h"
 #include "qr_generator.h"
 
-int main(void)
+static GArray *qr_code = NULL;
+static gint qr_code_size = 0;
+
+void qr_initialize_array(gint size)
 {
-	// gtk_init(NULL, NULL);
+	gint i = 0;
+	gboolean temp = FALSE;
 	
-	// gtk_window_init();
+	qr_code = g_array_new(FALSE, TRUE, sizeof(gboolean));
 	
-	// gtk_main();
+	for(i = 0; i < size * size; i++)
+	{
+		g_array_append_val(qr_code, temp);
+	}
 	
-	qr_initialize_array(16);
-	qr_set_pixel(1, 1, TRUE);
-	printf("%i\n", qr_get_pixel(1, 1));
-	qr_free_array();
+	qr_code_size = size;
+}
+
+void qr_free_array(void)
+{
+	g_array_free(qr_code, TRUE);
+}
+
+gboolean qr_get_pixel(gint x, gint y)
+{
+	if(qr_code == NULL)
+	{
+		return FALSE;
+	}
 	
-	return 0;
+	return g_array_index(qr_code, gboolean, y * qr_code_size + x);
+}
+
+void qr_set_pixel(gint x, gint y, gboolean value)
+{
+	g_array_index(qr_code, gboolean, y * qr_code_size + x) = value;
 }
