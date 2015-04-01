@@ -36,7 +36,7 @@ int main(void)
 	// printf("%i\n", qr_get_pixel(1, 1));
 	// qr_free_array();
 	
-	qr_render_code("Hello World");
+	qr_render_code("Hello World Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah", ERR_CORR_L);
 	
 	return 0;
 }
