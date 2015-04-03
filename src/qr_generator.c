@@ -92,8 +92,11 @@ void qr_render(gchar *input)
 
 void qr_free(void)
 {
-	g_array_free(qr_code_data, TRUE);
-	qr_code_data = NULL;
+	if(qr_code_data != NULL)
+	{
+		g_array_free(qr_code_data, TRUE);
+		qr_code_data = NULL;
+	}
 }
 
 gint qr_get_size(void)

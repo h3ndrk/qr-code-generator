@@ -27,7 +27,7 @@
 static GtkWidget *headerbar = NULL;
 static GtkWidget *stack = NULL;
 static GtkWidget *drawing = NULL;
-// static GtkTextBuffer *buffer = NULL;
+static GtkWidget *text_entry = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -44,11 +44,6 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
-	
-	// white background
-	// cairo_set_source_rgb(cr, 1, 1, 1);
-	// cairo_rectangle(cr, 0, 0, width, height);
-	// cairo_fill(cr);
 	
 	if(width > height)
 	{
@@ -69,6 +64,7 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	qr_code_data = qr_get_pixels();
 	qr_code_size = qr_get_size();
 	
+	// QR code rendering
 	if(qr_code_data != NULL)
 	{
 		for(y = 0; y < (guint)qr_code_size; y++)
@@ -86,44 +82,65 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 		}
 	}
 	
-	// gtk_text_buffer_get_start_iter(buffer, &start);
-	// gtk_text_buffer_get_end_iter(buffer, &end);
-	// printf("Redraw: %s\n", gtk_text_buffer_get_text(buffer, &start, &end, TRUE));
-	
 	return FALSE;
 }
 
-static void cb_clicked(GtkWidget *button, gpointer data)
+static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 {
-	printf("Button clicked!\n");
-	qr_render("Hello World!");
+	qr_render((gchar *)gtk_entry_get_text(GTK_ENTRY(text_entry)));
 	
 	gtk_widget_queue_draw(drawing);
+	
+	gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+}
+
+static void cb_clicked_text_clear(GtkWidget *button, gpointer data)
+{
+	gtk_entry_set_text(GTK_ENTRY(text_entry), "");
+	gtk_widget_grab_focus(text_entry);
 }
 
 void gtk_window_init(void)
 {
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-	gtk_window_set_default_size(GTK_WINDOW(window), 870, 520);
+	gtk_window_set_default_size(GTK_WINDOW(window), 512, 512);
 	gtk_window_set_title(GTK_WINDOW(window), "QR-Code Generator");
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	
 	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
-	GtkWidget *button = gtk_button_new_with_label("Generate a QR code!");
 	GtkWidget *switcher = gtk_stack_switcher_new();
+	GtkWidget *text_button_generate = gtk_button_new_with_label("Generate QR code");
+	GtkWidget *text_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *text_label = gtk_label_new(NULL);
+	text_entry = gtk_entry_new();
+	GtkWidget *text_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	GtkWidget *text_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *text_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	
 	gtk_header_bar_set_custom_title(GTK_HEADER_BAR(headerbar), switcher);
 	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
 	gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
-	gtk_stack_add_titled(GTK_STACK(stack), button, "input_generate", "Input");
+	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
+	gtk_widget_set_halign(text_label, GTK_ALIGN_START);
+	gtk_entry_set_placeholder_text(GTK_ENTRY(text_entry), "Text or URL");
+	gtk_container_set_border_width(GTK_CONTAINER(text_vertical), 15);
+	gtk_style_context_add_class(gtk_widget_get_style_context(text_button_generate), "suggested-action");
+	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(text_vertical), text_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(text_vertical), text_entry, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(text_vertical), text_horizontal_buttons, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(text_scrolled), text_vertical);
+	gtk_stack_add_titled(GTK_STACK(stack), text_scrolled, "input_text", "Text/URL");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
-	g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(cb_clicked), NULL);
+	g_signal_connect(G_OBJECT(text_button_generate), "clicked", G_CALLBACK(cb_clicked_text_generate), NULL);
+	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	gtk_container_add(GTK_CONTAINER(window), stack);
