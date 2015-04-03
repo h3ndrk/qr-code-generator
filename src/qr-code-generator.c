@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include <qrencode.h>
 
 #include "gtk_window.h"
 #include "qr_generator.h"
@@ -36,7 +37,10 @@ int main(void)
 	// printf("%i\n", qr_get_pixel(1, 1));
 	// qr_free_array();
 	
-	qr_render_code("HELLO WORLD", ERR_CORR_L);
+	qr_render("HELLO WORLD");
+	// qr_render("Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test!");
+	
+	qr_free();
 	
 	return 0;
 }
