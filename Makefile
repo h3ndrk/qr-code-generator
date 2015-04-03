@@ -30,8 +30,8 @@ all: qr_code_generator
 
 # Compile main program
 
-qr_code_generator: init bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o
-	$(CC) bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
+qr_code_generator: init bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o
+	$(CC) bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
 
 # Initializes directories
 
@@ -49,6 +49,9 @@ bin/obj/gtk_window.o: src/gtk_window.c
 
 bin/obj/qr_generator.o: src/qr_generator.c
 	$(CC) $(CFLAGS) -c -o bin/obj/qr_generator.o src/qr_generator.c $(LIBS)
+
+bin/obj/vcard_generator.o: src/vcard_generator.c
+	$(CC) $(CFLAGS) -c -o bin/obj/vcard_generator.o src/vcard_generator.c $(LIBS)
 
 # Clean
 

@@ -1,0 +1,1 @@
+GString *vcard_generate(gchar *first_name, gchar *last_name, gchar *title, gchar *street, gchar *zip_code, gchar *city, gchar *country, gchar *company, gchar *email_personal, gchar *email_business, gchar *phone_personal, gchar *phone_mobile, gchar *phone_business, gchar *website);
