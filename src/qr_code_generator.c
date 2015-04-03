@@ -26,8 +26,8 @@
 
 int main(void)
 {
-	printf("GTK version: %i.%i.%i\n", gtk_major_version, gtk_minor_version, gtk_micro_version);
-	printf("GLIB version: %i.%i.%i\n", glib_major_version, glib_minor_version, glib_micro_version);
+	// printf("GTK version: %i.%i.%i\n", gtk_major_version, gtk_minor_version, gtk_micro_version);
+	// printf("GLIB version: %i.%i.%i\n", glib_major_version, glib_minor_version, glib_micro_version);
 	
 	gtk_init(NULL, NULL);
 	

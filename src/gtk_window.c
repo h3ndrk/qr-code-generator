@@ -43,6 +43,8 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	guint y = 0;
 	guint index = 0;
 	
+	UNUSED(data);
+	
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
 	
@@ -90,6 +92,9 @@ static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 {
 	gint error = 0;
 	
+	UNUSED(button);
+	UNUSED(data);
+	
 	error = qr_render((gchar *)gtk_entry_get_text(GTK_ENTRY(text_entry)));
 	switch(error)
 	{
@@ -102,21 +107,21 @@ static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 		}
 		case ERR_INVALID_INPUT:
 		{
-			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.");
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
 			gtk_dialog_run(GTK_DIALOG(dialog));
 			gtk_widget_destroy(dialog);
 			break;
 		}
 		case ERR_NO_MEMORY:
 		{
-			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.");
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
 			gtk_dialog_run(GTK_DIALOG(dialog));
 			gtk_widget_destroy(dialog);
 			break;
 		}
 		case ERR_RANGE:
 		{
-			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.");
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
 			gtk_dialog_run(GTK_DIALOG(dialog));
 			gtk_widget_destroy(dialog);
 			break;
@@ -127,6 +132,9 @@ static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 
 static void cb_clicked_text_clear(GtkWidget *button, gpointer data)
 {
+	UNUSED(button);
+	UNUSED(data);
+	
 	gtk_entry_set_text(GTK_ENTRY(text_entry), "");
 	gtk_widget_grab_focus(text_entry);
 }

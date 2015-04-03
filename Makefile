@@ -17,21 +17,21 @@ CC = gcc
 
 CFLAGS += -Wall
 CFLAGS += -Wextra
-CFLAGS += -lm
 CFLAGS += `pkg-config --cflags gtk+-3.0`
 CFLAGS += `pkg-config --cflags libqrencode`
 
+LIBS += -lm
 LIBS += `pkg-config --libs gtk+-3.0`
 LIBS += `pkg-config --libs libqrencode`
 
-.PHONY: all qr-code-generator init clean
+.PHONY: all qr_code_generator init clean
 
-all: qr-code-generator
+all: qr_code_generator
 
 # Compile main program
 
-qr-code-generator: init bin/obj/qr-code-generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o
-	$(CC) bin/obj/qr-code-generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
+qr_code_generator: init bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o
+	$(CC) bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
 
 # Initializes directories
 
@@ -41,8 +41,8 @@ init:
 
 # C-objects
 
-bin/obj/qr-code-generator.o: src/qr-code-generator.c
-	$(CC) $(CFLAGS) -c -o bin/obj/qr-code-generator.o src/qr-code-generator.c $(LIBS)
+bin/obj/qr_code_generator.o: src/qr_code_generator.c
+	$(CC) $(CFLAGS) -c -o bin/obj/qr_code_generator.o src/qr_code_generator.c $(LIBS)
 
 bin/obj/gtk_window.o: src/gtk_window.c
 	$(CC) $(CFLAGS) -c -o bin/obj/gtk_window.o src/gtk_window.c $(LIBS)
