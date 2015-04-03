@@ -20,29 +20,44 @@
 #include <string.h>
 #include <gtk/gtk.h>
 
+static GtkWidget *stack = NULL;
 static GtkWidget *drawing = NULL;
-static GtkTextBuffer *buffer = NULL;
+// static GtkTextBuffer *buffer = NULL;
 
 gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
-	GtkTextIter start;
-	GtkTextIter end;
-	
-	guint width, height;
-	GdkRGBA color;
+	guint width = 0;
+	guint height = 0;
+	guint size = 0;
+	guint offset_x = 0;
+	guint offset_y = 0;
 	
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
-	cairo_arc(cr, width / 2.0, height / 2.0, MIN(width, height) / 2.0, 0, 2 * G_PI);
 	
-	gtk_style_context_get_color(gtk_widget_get_style_context(widget), 0, &color);
-	gdk_cairo_set_source_rgba(cr, &color);
+	// white background
+	// cairo_set_source_rgb(cr, 1, 1, 1);
+	// cairo_rectangle(cr, 0, 0, width, height);
+	// cairo_fill(cr);
 	
+	if(width > height)
+	{
+		size = height;
+		offset_x = (width - height) / 2;
+	}
+	else
+	{
+		size = width;
+		offset_y = (height - width) / 2;
+	}
+	
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, offset_x, offset_y, size, size);
 	cairo_fill(cr);
 	
-	gtk_text_buffer_get_start_iter(buffer, &start);
-	gtk_text_buffer_get_end_iter(buffer, &end);
-	printf("Redraw: %s\n", gtk_text_buffer_get_text(buffer, &start, &end, TRUE));
+	// gtk_text_buffer_get_start_iter(buffer, &start);
+	// gtk_text_buffer_get_end_iter(buffer, &end);
+	// printf("Redraw: %s\n", gtk_text_buffer_get_text(buffer, &start, &end, TRUE));
 	
 	return FALSE;
 }
@@ -62,19 +77,30 @@ void gtk_window_init(void)
 	gtk_window_set_title(GTK_WINDOW(window), "QR-Code Generator");
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	
-	GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	GtkWidget *vertical_box_right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-	GtkWidget *vertical_box_left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-	GtkWidget *text_view = gtk_text_view_new();
+	stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
-	GtkWidget *button = gtk_button_new_with_label("Encode");
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 	
-	gtk_container_set_border_width(GTK_CONTAINER(vertical_box_left), 15);
-	gtk_container_set_border_width(GTK_CONTAINER(vertical_box_right), 15);
-	gtk_widget_set_size_request(drawing, 256, 256);
+	gtk_stack_add_named(GTK_STACK(stack), drawing, "output_code");
+	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
-	g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(cb_clicked), NULL);
+	
+	gtk_container_add(GTK_CONTAINER(window), stack);
+	
+	gtk_widget_show_all(window);
+	
+	// GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	// GtkWidget *vertical_box_right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	// GtkWidget *vertical_box_left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	// GtkWidget *text_view = gtk_text_view_new();
+	// drawing = gtk_drawing_area_new();
+	// GtkWidget *button = gtk_button_new_with_label("Encode");
+	// buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+	
+	// gtk_container_set_border_width(GTK_CONTAINER(vertical_box_left), 15);
+	// gtk_container_set_border_width(GTK_CONTAINER(vertical_box_right), 15);
+	// gtk_widget_set_size_request(drawing, 256, 256);
+	// g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
+	// g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(cb_clicked), NULL);
 	
 	// root_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	// right_vertical_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
@@ -102,13 +128,11 @@ void gtk_window_init(void)
 	// // gtk_box_pack_start(GTK_BOX(box), radio2, FALSE, FALSE, 0);
 	// // gtk_container_add(GTK_CONTAINER(scrolled_left), root_box);
 	
-	gtk_box_pack_start(GTK_BOX(vertical_box_left), text_view, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vertical_box_left), button, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vertical_box_right), drawing, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(root_box), vertical_box_left, TRUE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(root_box), vertical_box_right, TRUE, TRUE, 0);
+	// gtk_box_pack_start(GTK_BOX(vertical_box_left), text_view, FALSE, FALSE, 0);
+	// gtk_box_pack_start(GTK_BOX(vertical_box_left), button, FALSE, FALSE, 0);
+	// gtk_box_pack_start(GTK_BOX(vertical_box_right), drawing, FALSE, FALSE, 0);
+	// gtk_box_pack_start(GTK_BOX(root_box), vertical_box_left, TRUE, TRUE, 0);
+	// gtk_box_pack_start(GTK_BOX(root_box), vertical_box_right, TRUE, TRUE, 0);
 	
-	gtk_container_add(GTK_CONTAINER(window), root_box);
-	
-	gtk_widget_show_all(window);
+	// gtk_container_add(GTK_CONTAINER(window), root_box);
 }

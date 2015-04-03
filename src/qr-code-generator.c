@@ -26,11 +26,11 @@
 
 int main(void)
 {
-	// gtk_init(NULL, NULL);
+	gtk_init(NULL, NULL);
 	
-	// gtk_window_init();
+	gtk_window_init();
 	
-	// gtk_main();
+	gtk_main();
 	
 	// qr_initialize_array(16);
 	// qr_set_pixel(1, 1, TRUE);
