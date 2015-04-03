@@ -18,19 +18,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <gtk/gtk.h>
 
+#include "gtk_window.h"
+#include "qr_generator.h"
+
+static GtkWidget *headerbar = NULL;
 static GtkWidget *stack = NULL;
 static GtkWidget *drawing = NULL;
 // static GtkTextBuffer *buffer = NULL;
 
-gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
+static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
 	guint width = 0;
 	guint height = 0;
 	guint size = 0;
 	guint offset_x = 0;
 	guint offset_y = 0;
+	GArray *qr_code_data = NULL;
+	gint qr_code_size = 0;
+	guint x = 0;
+	guint y = 0;
+	guint index = 0;
 	
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
@@ -51,9 +61,30 @@ gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 		offset_y = (height - width) / 2;
 	}
 	
+	// white background
 	cairo_set_source_rgb(cr, 1, 1, 1);
 	cairo_rectangle(cr, offset_x, offset_y, size, size);
 	cairo_fill(cr);
+	
+	qr_code_data = qr_get_pixels();
+	qr_code_size = qr_get_size();
+	
+	if(qr_code_data != NULL)
+	{
+		for(y = 0; y < (guint)qr_code_size; y++)
+		{
+			for(x = 0; x < (guint)qr_code_size; x++)
+			{
+				index = (y * qr_code_size) + x;
+				if(g_array_index(qr_code_data, gboolean, index))
+				{
+					cairo_set_source_rgb(cr, 0, 0, 0);
+					cairo_rectangle(cr, offset_x + floor((x + 1) * ((float)size / (qr_code_size + 2))), offset_y + floor((y + 1) * ((float)size / (qr_code_size + 2))), ceil((float)size / (qr_code_size + 2)), ceil((float)size / (qr_code_size + 2)));
+					cairo_fill(cr);
+				}
+			}
+		}
+	}
 	
 	// gtk_text_buffer_get_start_iter(buffer, &start);
 	// gtk_text_buffer_get_end_iter(buffer, &end);
@@ -62,9 +93,10 @@ gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	return FALSE;
 }
 
-void cb_clicked(GtkWidget *button, gpointer data)
+static void cb_clicked(GtkWidget *button, gpointer data)
 {
 	printf("Button clicked!\n");
+	qr_render("Hello World!");
 	
 	gtk_widget_queue_draw(drawing);
 }
@@ -77,13 +109,23 @@ void gtk_window_init(void)
 	gtk_window_set_title(GTK_WINDOW(window), "QR-Code Generator");
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	
+	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
+	GtkWidget *button = gtk_button_new_with_label("Generate a QR code!");
+	GtkWidget *switcher = gtk_stack_switcher_new();
 	
-	gtk_stack_add_named(GTK_STACK(stack), drawing, "output_code");
+	gtk_header_bar_set_custom_title(GTK_HEADER_BAR(headerbar), switcher);
+	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
+	gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
+	gtk_stack_add_titled(GTK_STACK(stack), button, "input_generate", "Input");
+	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
+	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
+	g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(cb_clicked), NULL);
 	
+	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	gtk_container_add(GTK_CONTAINER(window), stack);
 	
 	gtk_widget_show_all(window);

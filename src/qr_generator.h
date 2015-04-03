@@ -12,3 +12,5 @@
 
 void qr_render(gchar *input);
 void qr_free(void);
+gint qr_get_size(void);
+GArray *qr_get_pixels(void);

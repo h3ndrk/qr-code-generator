@@ -17,6 +17,7 @@ CC = gcc
 
 CFLAGS += -Wall
 CFLAGS += -Wextra
+CFLAGS += -lm
 CFLAGS += `pkg-config --cflags gtk+-3.0`
 CFLAGS += `pkg-config --cflags libqrencode`
 

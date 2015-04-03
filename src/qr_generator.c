@@ -48,44 +48,44 @@ void qr_render(gchar *input)
 	qr_code_size = qr->width;
 	qr_code_version = qr->version;
 	
-	printf("\e[0;107m  \e[0m");
+	// printf("\e[0;107m  \e[0m");
 	
-	for(j_qr = 0; j_qr < qr->width; j_qr++)
-	{
-		printf("\e[0;107m  \e[0m");
-	}
+	// for(j_qr = 0; j_qr < qr->width; j_qr++)
+	// {
+	// 	printf("\e[0;107m  \e[0m");
+	// }
 	
-	printf("\e[0;107m  \e[0m\n");
+	// printf("\e[0;107m  \e[0m\n");
 	
 	for(i_qr = 0; i_qr < qr->width; i_qr++)
 	{
-		printf("\e[0;107m  \e[0m");
+		// printf("\e[0;107m  \e[0m");
 		
 		for(j_qr = 0; j_qr < qr->width; j_qr++)
 		{
 			if(qr->data[(i_qr * qr->width) + j_qr] & 0x1)
 			{
-				printf("\e[0;100m  \e[0m");
+				// printf("\e[0;100m  \e[0m");
 				g_array_append_val(qr_code_data, pseudo_true);
 			}
 			else
 			{
-				printf("\e[0;107m  \e[0m");
+				// printf("\e[0;107m  \e[0m");
 				g_array_append_val(qr_code_data, pseudo_false);
 			}
 		}
 		
-		printf("\e[0;107m  \e[0m\n");
+		// printf("\e[0;107m  \e[0m\n");
 	}
 	
-	printf("\e[0;107m  \e[0m");
+	// printf("\e[0;107m  \e[0m");
 	
-	for(j_qr = 0; j_qr < qr->width; j_qr++)
-	{
-		printf("\e[0;107m  \e[0m");
-	}
+	// for(j_qr = 0; j_qr < qr->width; j_qr++)
+	// {
+	// 	printf("\e[0;107m  \e[0m");
+	// }
 	
-	printf("\e[0;107m  \e[0m\n");
+	// printf("\e[0;107m  \e[0m\n");
 	
 	QRcode_free(qr);
 }
@@ -94,6 +94,16 @@ void qr_free(void)
 {
 	g_array_free(qr_code_data, TRUE);
 	qr_code_data = NULL;
+}
+
+gint qr_get_size(void)
+{
+	return qr_code_size;
+}
+
+GArray *qr_get_pixels(void)
+{
+	return qr_code_data;
 }
 
 // static GArray *qr_code = NULL;
