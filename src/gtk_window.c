@@ -24,6 +24,7 @@
 #include "gtk_window.h"
 #include "qr_generator.h"
 
+static GtkWidget *window = NULL;
 static GtkWidget *headerbar = NULL;
 static GtkWidget *stack = NULL;
 static GtkWidget *drawing = NULL;
@@ -87,11 +88,41 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 {
-	qr_render((gchar *)gtk_entry_get_text(GTK_ENTRY(text_entry)));
+	gint error = 0;
 	
-	gtk_widget_queue_draw(drawing);
+	error = qr_render((gchar *)gtk_entry_get_text(GTK_ENTRY(text_entry)));
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
 	
-	gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
 }
 
 static void cb_clicked_text_clear(GtkWidget *button, gpointer data)
@@ -102,7 +133,7 @@ static void cb_clicked_text_clear(GtkWidget *button, gpointer data)
 
 void gtk_window_init(void)
 {
-	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size(GTK_WINDOW(window), 512, 512);
 	gtk_window_set_title(GTK_WINDOW(window), "QR-Code Generator");

@@ -10,7 +10,12 @@
 // void qr_set_pixel(gint x, gint y, gboolean value);
 // void qr_render_code(gchar *input, error_correction_t error_correction);
 
-void qr_render(gchar *input);
+#define ERR_NO_ERROR 0
+#define ERR_INVALID_INPUT 1
+#define ERR_NO_MEMORY 2
+#define ERR_RANGE 4
+
+gint qr_render(gchar *input);
 void qr_free(void);
 gint qr_get_size(void);
 GArray *qr_get_pixels(void);

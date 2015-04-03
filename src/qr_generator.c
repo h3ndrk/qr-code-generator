@@ -20,6 +20,7 @@
 #include <string.h>
 #include <glib.h>
 #include <qrencode.h>
+#include <errno.h>
 
 #include "qr_generator.h"
 
@@ -29,13 +30,35 @@ static gint qr_code_version = 0;
 static gboolean pseudo_true = TRUE;
 static gboolean pseudo_false = FALSE;
 
-void qr_render(gchar *input)
+gint qr_render(gchar *input)
 {
 	QRcode *qr = NULL;
 	gint i_qr = 0;
 	gint j_qr = 0;
 	
 	qr = QRcode_encodeString(input, 0, QR_ECLEVEL_L, QR_MODE_8, 1);
+	
+	if(qr == NULL)
+	{
+		switch(errno)
+		{
+			case EINVAL:
+			{
+				return ERR_INVALID_INPUT;
+				break;
+			}
+			case ENOMEM:
+			{
+				return ERR_NO_MEMORY;
+				break;
+			}
+			case ERANGE:
+			{
+				return ERR_RANGE;
+				break;
+			}
+		}
+	}
 	
 	if(qr_code_data != NULL)
 	{
@@ -88,6 +111,8 @@ void qr_render(gchar *input)
 	// printf("\e[0;107m  \e[0m\n");
 	
 	QRcode_free(qr);
+	
+	return ERR_NO_ERROR;
 }
 
 void qr_free(void)
