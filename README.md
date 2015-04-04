@@ -1,4 +1,4 @@
-# qr-code-generator
+# QR-Code generator
 
 Simple graphical user interface for generating QR-Codes
 
