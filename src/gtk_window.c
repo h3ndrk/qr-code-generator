@@ -47,6 +47,9 @@ static GtkWidget *contact_entry_phone_mobile = NULL;
 static GtkWidget *contact_entry_phone_business = NULL;
 static GtkWidget *contact_entry_website = NULL;
 static GtkTextBuffer *contact_text_buffer = NULL;
+static GtkWidget *sms_entry_phone = NULL;
+static GtkWidget *sms_entry_text = NULL;
+static GtkWidget *sms_label_size = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -292,6 +295,77 @@ static void cb_changed_switcher(GtkComboBox *widget, gpointer data)
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), gtk_combo_box_get_active_id(widget));
 }
 
+static void cb_clicked_sms_generate_contact(GtkWidget *button, gpointer data)
+{
+	gint error = 0;
+	gchar *sms_data = NULL;
+	
+	UNUSED(button);
+	UNUSED(data);
+	
+	sms_data = g_strdup_printf("SMSTO:%s:%s", (gchar *)gtk_entry_get_text(GTK_ENTRY(sms_entry_phone)), (gchar *)gtk_entry_get_text(GTK_ENTRY(sms_entry_text)));
+	
+	error = qr_render(sms_data);
+	
+	g_free(sms_data);
+	
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
+}
+
+static void cb_clicked_sms_clear(GtkWidget *button, gpointer data)
+{
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_entry_set_text(GTK_ENTRY(sms_entry_phone), "");
+	gtk_entry_set_text(GTK_ENTRY(sms_entry_text), "");
+}
+
+static void cb_changed_sms_entry(GtkEditable *editable, gpointer data)
+{
+	gchar *character_data = NULL;
+	
+	UNUSED(editable);
+	UNUSED(data);
+	
+	character_data = g_strdup_printf("%li character%s", strlen((gchar *)gtk_entry_get_text(GTK_ENTRY(sms_entry_text))), (strlen((gchar *)gtk_entry_get_text(GTK_ENTRY(sms_entry_text)))!=1)?("s"):(""));
+	
+	gtk_label_set_text(GTK_LABEL(sms_label_size), character_data);
+	
+	g_free(character_data);
+}
+
 void gtk_window_init(void)
 {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -341,16 +415,24 @@ void gtk_window_init(void)
 	GtkWidget *contact_horizontal_6 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
 	GtkWidget *contact_text_view = gtk_text_view_new();
 	contact_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(contact_text_view));
+	GtkWidget *sms_label = gtk_label_new(NULL);
+	GtkWidget *sms_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *sms_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	sms_entry_phone = gtk_entry_new();
+	sms_entry_text = gtk_entry_new();
+	sms_label_size = gtk_label_new("0 characters");
+	GtkWidget *sms_button_generate = gtk_button_new_with_label("Generate QR code");
+	GtkWidget *sms_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *sms_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	
 	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
 	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
 	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), switcher);
-	// gtk_header_bar_set_custom_title(GTK_HEADER_BAR(headerbar), switcher);
 	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
-	// gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 0, "input_text", "Text/URL");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 1, "input_contact", "Contact");
-	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 2, "output_code", "Generated QR code");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 2, "input_sms", "SMS");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 3, "output_code", "Generated QR code");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(switcher), 0);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
@@ -358,7 +440,6 @@ void gtk_window_init(void)
 	gtk_entry_set_placeholder_text(GTK_ENTRY(text_entry), "Text or URL");
 	gtk_container_set_border_width(GTK_CONTAINER(text_vertical), 15);
 	gtk_style_context_add_class(gtk_widget_get_style_context(text_button_generate), "suggested-action");
-	gtk_style_context_add_class(gtk_widget_get_style_context(contact_button_generate), "suggested-action");
 	
 	gtk_label_set_markup(GTK_LABEL(contact_label), "<span size=\"xx-large\">Generate from contact</span>");
 	gtk_widget_set_halign(contact_label, GTK_ALIGN_START);
@@ -394,7 +475,16 @@ void gtk_window_init(void)
 	GtkFileFilter *filter_contact = gtk_file_filter_new();
 	gtk_file_filter_add_pattern(filter_contact, "*.vcf");
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(contact_button_file), filter_contact);
+	gtk_style_context_add_class(gtk_widget_get_style_context(contact_button_generate), "suggested-action");
 	cb_changed_contact_entry(NULL, NULL); // initialize vcard
+	
+	gtk_label_set_markup(GTK_LABEL(sms_label), "<span size=\"xx-large\">Generate from SMS</span>");
+	gtk_widget_set_halign(sms_label, GTK_ALIGN_START);
+	gtk_widget_set_halign(sms_label_size, GTK_ALIGN_START);
+	gtk_entry_set_placeholder_text(GTK_ENTRY(sms_entry_phone), "Recipient phone number");
+	gtk_entry_set_placeholder_text(GTK_ENTRY(sms_entry_text), "SMS Message");
+	gtk_container_set_border_width(GTK_CONTAINER(sms_vertical), 15);
+	gtk_style_context_add_class(gtk_widget_get_style_context(sms_button_generate), "suggested-action");
 	
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
@@ -432,8 +522,18 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(contact_scrolled), contact_vertical);
 	
+	gtk_box_pack_start(GTK_BOX(sms_vertical), sms_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_vertical), sms_entry_phone, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_vertical), sms_entry_text, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_horizontal_buttons), sms_button_generate, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_horizontal_buttons), sms_button_clear, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_horizontal_buttons), sms_label_size, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(sms_vertical), sms_horizontal_buttons, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(sms_scrolled), sms_vertical);
+	
 	gtk_stack_add_titled(GTK_STACK(stack), text_scrolled, "input_text", "Text/URL");
 	gtk_stack_add_titled(GTK_STACK(stack), contact_scrolled, "input_contact", "Contact");
+	gtk_stack_add_titled(GTK_STACK(stack), sms_scrolled, "input_sms", "SMS");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
@@ -441,9 +541,11 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
 	g_signal_connect(G_OBJECT(text_button_generate), "clicked", G_CALLBACK(cb_clicked_text_generate), NULL);
 	g_signal_connect(G_OBJECT(contact_button_generate), "clicked", G_CALLBACK(cb_clicked_contact_generate_contact), NULL);
+	g_signal_connect(G_OBJECT(sms_button_generate), "clicked", G_CALLBACK(cb_clicked_sms_generate_contact), NULL);
 	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact_contact), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_button_clear), "clicked", G_CALLBACK(cb_clicked_contact_clear), NULL);
+	g_signal_connect(G_OBJECT(sms_button_clear), "clicked", G_CALLBACK(cb_clicked_sms_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_first_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_last_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_title), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
@@ -458,6 +560,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(contact_entry_phone_mobile), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_phone_business), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_website), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
+	g_signal_connect(G_OBJECT(sms_entry_text), "changed", G_CALLBACK(cb_changed_sms_entry), NULL);
 	g_signal_connect(G_OBJECT(switcher), "changed", G_CALLBACK(cb_changed_switcher), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
