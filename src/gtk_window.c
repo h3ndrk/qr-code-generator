@@ -28,6 +28,7 @@
 static GtkWidget *window = NULL;
 static GtkWidget *headerbar = NULL;
 static GtkWidget *stack = NULL;
+static GtkWidget *switcher = NULL;
 static GtkWidget *drawing = NULL;
 static GtkWidget *text_entry = NULL;
 static GtkWidget *contact_button_file = NULL;
@@ -119,6 +120,7 @@ static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 		{
 			gtk_widget_queue_draw(drawing);
 			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
 			
 			break;
 		}
@@ -177,6 +179,7 @@ static void cb_clicked_contact_generate_contact(GtkWidget *button, gpointer data
 		{
 			gtk_widget_queue_draw(drawing);
 			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
 			
 			break;
 		}
@@ -282,6 +285,13 @@ static void cb_clicked_contact_clear(GtkWidget *button, gpointer data)
 	gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "Website");
 }
 
+static void cb_changed_switcher(GtkComboBox *widget, gpointer data)
+{
+	UNUSED(data);
+	
+	gtk_stack_set_visible_child_name(GTK_STACK(stack), gtk_combo_box_get_active_id(widget));
+}
+
 void gtk_window_init(void)
 {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -293,7 +303,7 @@ void gtk_window_init(void)
 	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
-	GtkWidget *switcher = gtk_stack_switcher_new();
+	switcher = gtk_combo_box_text_new();
 	GtkWidget *text_button_generate = gtk_button_new_with_label("Generate QR code");
 	GtkWidget *text_button_clear = gtk_button_new_with_label("Clear");
 	GtkWidget *text_label = gtk_label_new(NULL);
@@ -329,12 +339,19 @@ void gtk_window_init(void)
 	GtkWidget *contact_horizontal_4 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
 	GtkWidget *contact_horizontal_5 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
 	GtkWidget *contact_horizontal_6 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-	GtkWidget *contact_text_entry = gtk_text_view_new();
-	contact_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(contact_text_entry));
+	GtkWidget *contact_text_view = gtk_text_view_new();
+	contact_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(contact_text_view));
 	
-	gtk_header_bar_set_custom_title(GTK_HEADER_BAR(headerbar), switcher);
+	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
+	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
+	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), switcher);
+	// gtk_header_bar_set_custom_title(GTK_HEADER_BAR(headerbar), switcher);
 	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
-	gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
+	// gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 0, "input_text", "Text/URL");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 1, "input_contact", "Contact");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 2, "output_code", "Generated QR code");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(switcher), 0);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
 	gtk_widget_set_halign(text_label, GTK_ALIGN_START);
@@ -344,7 +361,6 @@ void gtk_window_init(void)
 	gtk_style_context_add_class(gtk_widget_get_style_context(contact_button_generate), "suggested-action");
 	
 	gtk_label_set_markup(GTK_LABEL(contact_label), "<span size=\"xx-large\">Generate from contact</span>");
-	// gtk_widget_set_sensitive(contact_button_file, FALSE);
 	gtk_widget_set_halign(contact_label, GTK_ALIGN_START);
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_first_name), "First name");
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_last_name), "Last name");
@@ -412,7 +428,7 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_4, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_5, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_6, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_text_entry, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_text_view, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(contact_scrolled), contact_vertical);
 	
@@ -420,6 +436,7 @@ void gtk_window_init(void)
 	gtk_stack_add_titled(GTK_STACK(stack), contact_scrolled, "input_contact", "Contact");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
 	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
 	g_signal_connect(G_OBJECT(text_button_generate), "clicked", G_CALLBACK(cb_clicked_text_generate), NULL);
@@ -441,57 +458,10 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(contact_entry_phone_mobile), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_phone_business), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_website), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
+	g_signal_connect(G_OBJECT(switcher), "changed", G_CALLBACK(cb_changed_switcher), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	gtk_container_add(GTK_CONTAINER(window), stack);
 	
 	gtk_widget_show_all(window);
-	
-	// GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	// GtkWidget *vertical_box_right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-	// GtkWidget *vertical_box_left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-	// GtkWidget *text_view = gtk_text_view_new();
-	// drawing = gtk_drawing_area_new();
-	// GtkWidget *button = gtk_button_new_with_label("Encode");
-	// buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-	
-	// gtk_container_set_border_width(GTK_CONTAINER(vertical_box_left), 15);
-	// gtk_container_set_border_width(GTK_CONTAINER(vertical_box_right), 15);
-	// gtk_widget_set_size_request(drawing, 256, 256);
-	// g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
-	// g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(cb_clicked), NULL);
-	
-	// root_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	// right_vertical_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-	// scrolled_left = gtk_scrolled_window_new(NULL, NULL);
-	// gtk_container_set_border_width(GTK_CONTAINER(right_vertical_box), 15);
-	// scrolled_right = gtk_scrolled_window_new(NULL, NULL);
-	// button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-	// GtkWidget *button = gtk_button_new_with_label("Refresh");
-	// GtkWidget *button2 = gtk_button_new_with_label("Fullscreen");
-	// drawing = gtk_drawing_area_new();
-	// gtk_widget_set_size_request(drawing, 256, 256);
-	// g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
-	// gtk_box_pack_start(GTK_BOX(root_box), scrolled_left, TRUE, TRUE, 0);
-	// gtk_box_pack_start(GTK_BOX(root_box), scrolled_right, TRUE, TRUE, 0);
-	// gtk_box_pack_start(GTK_BOX(right_vertical_box), drawing, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(right_vertical_box), button_box, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(button_box), button, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(button_box), button2, FALSE, FALSE, 0);
-	// gtk_container_add(GTK_CONTAINER(scrolled_right), right_vertical_box);
-	
-	// // GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	// // GtkWidget *radio = gtk_radio_button_new_with_label(NULL, "Das ist ein Test!!!");
-	// // GtkWidget *radio2 = gtk_radio_button_new_with_label(NULL, "Das ist ein Test!!!");
-	// // gtk_box_pack_start(GTK_BOX(box), radio, FALSE, FALSE, 0);
-	// // gtk_box_pack_start(GTK_BOX(box), radio2, FALSE, FALSE, 0);
-	// // gtk_container_add(GTK_CONTAINER(scrolled_left), root_box);
-	
-	// gtk_box_pack_start(GTK_BOX(vertical_box_left), text_view, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(vertical_box_left), button, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(vertical_box_right), drawing, FALSE, FALSE, 0);
-	// gtk_box_pack_start(GTK_BOX(root_box), vertical_box_left, TRUE, TRUE, 0);
-	// gtk_box_pack_start(GTK_BOX(root_box), vertical_box_right, TRUE, TRUE, 0);
-	
-	// gtk_container_add(GTK_CONTAINER(window), root_box);
 }
