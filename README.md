@@ -11,5 +11,5 @@ Simple graphical user interface for generating QR-Codes
 * Call/Phone number
 * Geolocation
 * Calendar event
-* E-Mail *in the future*
+* E-Mail
 * WLAN access *in the future*
