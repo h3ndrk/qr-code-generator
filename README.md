@@ -10,6 +10,6 @@ Simple graphical user interface for generating QR-Codes
 * SMS
 * Call/Phone number
 * Geolocation
-* Calendar event *in the future*
+* Calendar event
 * E-Mail *in the future*
 * WLAN access *in the future*
