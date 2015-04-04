@@ -12,4 +12,4 @@ Simple graphical user interface for generating QR-Codes
 * Geolocation
 * Calendar event
 * E-Mail
-* WLAN access *in the future*
+* WLAN access

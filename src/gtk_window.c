@@ -70,6 +70,10 @@ static GtkTextBuffer *cal_text_buffer = NULL;
 static GtkWidget *mail_entry_to = NULL;
 static GtkWidget *mail_entry_subject = NULL;
 static GtkTextBuffer *mail_text_buffer = NULL;
+static GtkWidget *wlan_entry_ssid = NULL;
+static GtkWidget *wlan_entry_psk = NULL;
+static GtkWidget *wlan_check_hidden = NULL;
+static GtkWidget *wlan_combo_auth = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -735,6 +739,88 @@ static void cb_clicked_mail_clear(GtkWidget *button, gpointer data)
 	gtk_text_buffer_set_text(mail_text_buffer, "E-mail message", -1);
 }
 
+static void cb_changed_wlan_combo(GtkComboBox *widget, gpointer data)
+{
+	UNUSED(data);
+	
+	// gtk_stack_set_visible_child_name(GTK_STACK(stack), gtk_combo_box_get_active_id(widget));
+	
+	if(gtk_combo_box_get_active(widget) == 0)
+	{
+		gtk_widget_set_sensitive(wlan_entry_psk, FALSE);
+	}
+	else
+	{
+		gtk_widget_set_sensitive(wlan_entry_psk, TRUE);
+	}
+}
+
+static void cb_clicked_wlan_generate(GtkWidget *button, gpointer data)
+{
+	gint error = 0;
+	gchar *wlan_data = NULL;
+	
+	UNUSED(button);
+	UNUSED(data);
+	
+	if(gtk_combo_box_get_active(GTK_COMBO_BOX(wlan_combo_auth)) == 0)
+	{
+		wlan_data = g_strdup_printf("WIFI:T:%s;S:%s;;H:%s;", (gchar *)gtk_combo_box_get_active_id(GTK_COMBO_BOX(wlan_combo_auth)), (gchar *)gtk_entry_get_text(GTK_ENTRY(wlan_entry_ssid)), (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wlan_check_hidden)))?("true"):("false"));
+	}
+	else
+	{
+		wlan_data = g_strdup_printf("WIFI:T:%s;S:%s;P:%s;H:%s;", (gchar *)gtk_combo_box_get_active_id(GTK_COMBO_BOX(wlan_combo_auth)), (gchar *)gtk_entry_get_text(GTK_ENTRY(wlan_entry_ssid)), (gchar *)gtk_entry_get_text(GTK_ENTRY(wlan_entry_psk)), (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wlan_check_hidden)))?("true"):("false"));
+	}
+	
+	error = qr_render(wlan_data);
+	
+	g_free(wlan_data);
+	
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
+}
+
+static void cb_clicked_wlan_clear(GtkWidget *button, gpointer data)
+{
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_entry_set_text(GTK_ENTRY(wlan_entry_ssid), "");
+	gtk_entry_set_text(GTK_ENTRY(wlan_entry_psk), "");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(wlan_combo_auth), 0);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wlan_check_hidden), FALSE);
+}
+
 void gtk_window_init(void)
 {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -852,6 +938,16 @@ void gtk_window_init(void)
 	mail_entry_subject = gtk_entry_new();
 	GtkWidget *mail_text_view = gtk_text_view_new();
 	mail_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(mail_text_view));
+	GtkWidget *wlan_label = gtk_label_new(NULL);
+	GtkWidget *wlan_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *wlan_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	GtkWidget *wlan_button_generate = gtk_button_new_with_label("Generate QR code");
+	GtkWidget *wlan_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *wlan_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	wlan_combo_auth = gtk_combo_box_text_new();
+	wlan_entry_ssid = gtk_entry_new();
+	wlan_entry_psk = gtk_entry_new();
+	wlan_check_hidden = gtk_check_button_new_with_label("Hidden SSID");
 	
 	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
 	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
@@ -864,7 +960,8 @@ void gtk_window_init(void)
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 4, "input_geo", "Geolocation");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 5, "input_cal", "Calendar event");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 6, "input_mail", "E-Mail");
-	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 7, "output_code", "Generated QR code");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 7, "input_wlan", "WLAN");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 8, "output_code", "Generated QR code");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(switcher), 0);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
@@ -1144,6 +1241,18 @@ void gtk_window_init(void)
 	gtk_text_buffer_set_text(mail_text_buffer, "E-mail message", -1);
 	gtk_style_context_add_class(gtk_widget_get_style_context(mail_button_generate), "suggested-action");
 	
+	gtk_label_set_markup(GTK_LABEL(wlan_label), "<span size=\"xx-large\">Generate from WLAN</span>");
+	gtk_widget_set_halign(wlan_label, GTK_ALIGN_START);
+	gtk_entry_set_placeholder_text(GTK_ENTRY(wlan_entry_ssid), "WLAN SSID");
+	gtk_entry_set_placeholder_text(GTK_ENTRY(wlan_entry_psk), "WLAN password or pre-shared key");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(wlan_combo_auth), 0, "nopass", "No password");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(wlan_combo_auth), 1, "WEP", "WEP authentication");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(wlan_combo_auth), 2, "WPA", "WPA authentication");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(wlan_combo_auth), 0);
+	gtk_widget_set_sensitive(wlan_entry_psk, FALSE);
+	gtk_container_set_border_width(GTK_CONTAINER(wlan_vertical), 15);
+	gtk_style_context_add_class(gtk_widget_get_style_context(wlan_button_generate), "suggested-action");
+	
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_vertical), text_label, FALSE, FALSE, 0);
@@ -1246,6 +1355,16 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(mail_scrolled), mail_vertical);
 	
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_entry_ssid, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_combo_auth, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_entry_psk, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_check_hidden, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_horizontal_buttons), wlan_button_generate, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_horizontal_buttons), wlan_button_clear, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(wlan_vertical), wlan_horizontal_buttons, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(wlan_scrolled), wlan_vertical);
+	
 	gtk_stack_add_titled(GTK_STACK(stack), text_scrolled, "input_text", "Text/URL");
 	gtk_stack_add_titled(GTK_STACK(stack), contact_scrolled, "input_contact", "Contact");
 	gtk_stack_add_titled(GTK_STACK(stack), sms_scrolled, "input_sms", "SMS");
@@ -1253,6 +1372,7 @@ void gtk_window_init(void)
 	gtk_stack_add_titled(GTK_STACK(stack), geo_scrolled, "input_geo", "Geolocation");
 	gtk_stack_add_titled(GTK_STACK(stack), cal_scrolled, "input_cal", "Calendar event");
 	gtk_stack_add_titled(GTK_STACK(stack), mail_scrolled, "input_mail", "E-Mail");
+	gtk_stack_add_titled(GTK_STACK(stack), wlan_scrolled, "input_wlan", "WLAN");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
@@ -1265,6 +1385,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(geo_button_generate), "clicked", G_CALLBACK(cb_clicked_geo_generate), NULL);
 	g_signal_connect(G_OBJECT(cal_button_generate), "clicked", G_CALLBACK(cb_clicked_cal_generate), NULL);
 	g_signal_connect(G_OBJECT(mail_button_generate), "clicked", G_CALLBACK(cb_clicked_mail_generate), NULL);
+	g_signal_connect(G_OBJECT(wlan_button_generate), "clicked", G_CALLBACK(cb_clicked_wlan_generate), NULL);
 	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact), NULL);
 	g_signal_connect(G_OBJECT(cal_button_file), "file-set", G_CALLBACK(cb_file_set_cal), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
@@ -1274,6 +1395,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(geo_button_clear), "clicked", G_CALLBACK(cb_clicked_geo_clear), NULL);
 	g_signal_connect(G_OBJECT(cal_button_clear), "clicked", G_CALLBACK(cb_clicked_cal_clear), NULL);
 	g_signal_connect(G_OBJECT(mail_button_clear), "clicked", G_CALLBACK(cb_clicked_mail_clear), NULL);
+	g_signal_connect(G_OBJECT(wlan_button_clear), "clicked", G_CALLBACK(cb_clicked_wlan_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_first_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_last_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_title), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
@@ -1297,6 +1419,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(cal_date_end), "day-selected", G_CALLBACK(cb_changed_cal_date), NULL);
 	g_signal_connect(G_OBJECT(sms_entry_text), "changed", G_CALLBACK(cb_changed_sms_entry), NULL);
 	g_signal_connect(G_OBJECT(switcher), "changed", G_CALLBACK(cb_changed_switcher), NULL);
+	g_signal_connect(G_OBJECT(wlan_combo_auth), "changed", G_CALLBACK(cb_changed_wlan_combo), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	gtk_container_add(GTK_CONTAINER(window), stack);
