@@ -67,6 +67,9 @@ static GtkWidget *cal_time_end_hour = NULL;
 static GtkWidget *cal_time_end_minute = NULL;
 static GtkWidget *cal_button_file = NULL;
 static GtkTextBuffer *cal_text_buffer = NULL;
+static GtkWidget *mail_entry_to = NULL;
+static GtkWidget *mail_entry_subject = NULL;
+static GtkTextBuffer *mail_text_buffer = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -592,6 +595,8 @@ static void cb_clicked_cal_generate(GtkWidget *button, gpointer data)
 	
 	error = qr_render(icalendar_data);
 	
+	g_free(icalendar_data);
+	
 	switch(error)
 	{
 		case ERR_NO_ERROR:
@@ -662,6 +667,72 @@ static void cb_file_set_cal(GtkFileChooserButton *widget, gpointer data)
 		g_free(file_contents);
 		g_free(filename);
 	}
+}
+
+static void cb_clicked_mail_generate(GtkWidget *button, gpointer data)
+{
+	gint error = 0;
+	gchar *mail_data = NULL;
+	gchar *mail_data_message = NULL;
+	GtkTextIter start_iter;
+	GtkTextIter end_iter;
+	
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_text_buffer_get_start_iter(mail_text_buffer, &start_iter);
+	gtk_text_buffer_get_end_iter(mail_text_buffer, &end_iter);
+	mail_data_message = gtk_text_buffer_get_text(mail_text_buffer, &start_iter, &end_iter, TRUE);
+	
+	mail_data = g_strdup_printf("MATMSG:TO:%s;SUB:%s;BODY:%s;;", (gchar *)gtk_entry_get_text(GTK_ENTRY(mail_entry_to)), (gchar *)gtk_entry_get_text(GTK_ENTRY(mail_entry_subject)), mail_data_message);
+	
+	error = qr_render(mail_data);
+	
+	g_free(mail_data_message);
+	g_free(mail_data);
+	
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
+}
+
+static void cb_clicked_mail_clear(GtkWidget *button, gpointer data)
+{
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_entry_set_text(GTK_ENTRY(mail_entry_to), "");
+	gtk_entry_set_text(GTK_ENTRY(mail_entry_subject), "");
+	gtk_text_buffer_set_text(mail_text_buffer, "E-mail message", -1);
 }
 
 void gtk_window_init(void)
@@ -771,6 +842,16 @@ void gtk_window_init(void)
 	cal_button_file = gtk_file_chooser_button_new("Select a .ics (iCalendar) file", GTK_FILE_CHOOSER_ACTION_OPEN);
 	GtkWidget *cal_text_view = gtk_text_view_new();
 	cal_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(cal_text_view));
+	GtkWidget *mail_label = gtk_label_new(NULL);
+	GtkWidget *mail_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *mail_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	GtkWidget *mail_button_generate = gtk_button_new_with_label("Generate QR code");
+	GtkWidget *mail_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *mail_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	mail_entry_to = gtk_entry_new();
+	mail_entry_subject = gtk_entry_new();
+	GtkWidget *mail_text_view = gtk_text_view_new();
+	mail_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(mail_text_view));
 	
 	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
 	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
@@ -782,7 +863,8 @@ void gtk_window_init(void)
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 3, "input_call", "Call/Phone number");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 4, "input_geo", "Geolocation");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 5, "input_cal", "Calendar event");
-	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 6, "output_code", "Generated QR code");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 6, "input_mail", "E-Mail");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 7, "output_code", "Generated QR code");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(switcher), 0);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
@@ -822,6 +904,11 @@ void gtk_window_init(void)
 	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_business), "Phone (business)");
 	gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "Website");
 	gtk_container_set_border_width(GTK_CONTAINER(contact_vertical), 15);
+	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(contact_text_view), 5);
+	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(contact_text_view), 5);
+	gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(contact_text_view), 2);
+	gtk_text_view_set_pixels_below_lines(GTK_TEXT_VIEW(contact_text_view), 2);
+	// gtk_text_view_set_monospace(GTK_TEXT_VIEW(contact_text_view), TRUE);
 	GtkFileFilter *filter_contact = gtk_file_filter_new();
 	gtk_file_filter_add_pattern(filter_contact, "*.vcf");
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(contact_button_file), filter_contact);
@@ -1034,11 +1121,28 @@ void gtk_window_init(void)
 	gtk_entry_set_placeholder_text(GTK_ENTRY(cal_entry_des), "Event description");
 	gtk_entry_set_text(GTK_ENTRY(cal_entry_des), "Event description");
 	gtk_container_set_border_width(GTK_CONTAINER(cal_vertical), 15);
+	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(cal_text_view), 5);
+	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(cal_text_view), 5);
+	gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(cal_text_view), 2);
+	gtk_text_view_set_pixels_below_lines(GTK_TEXT_VIEW(cal_text_view), 2);
+	// gtk_text_view_set_monospace(GTK_TEXT_VIEW(cal_text_view), TRUE);
 	GtkFileFilter *filter_cal = gtk_file_filter_new();
 	gtk_file_filter_add_pattern(filter_cal, "*.ics");
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(cal_button_file), filter_cal);
 	gtk_style_context_add_class(gtk_widget_get_style_context(cal_button_generate), "suggested-action");
 	cb_changed_cal_entry(NULL, NULL); // initialize icalendar
+	
+	gtk_label_set_markup(GTK_LABEL(mail_label), "<span size=\"xx-large\">Generate from e-mail</span>");
+	gtk_widget_set_halign(mail_label, GTK_ALIGN_START);
+	gtk_entry_set_placeholder_text(GTK_ENTRY(mail_entry_to), "Recipient e-mail address");
+	gtk_entry_set_placeholder_text(GTK_ENTRY(mail_entry_subject), "E-mail subject");
+	gtk_container_set_border_width(GTK_CONTAINER(mail_vertical), 15);
+	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(mail_text_view), 5);
+	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(mail_text_view), 5);
+	gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(mail_text_view), 2);
+	gtk_text_view_set_pixels_below_lines(GTK_TEXT_VIEW(mail_text_view), 2);
+	gtk_text_buffer_set_text(mail_text_buffer, "E-mail message", -1);
+	gtk_style_context_add_class(gtk_widget_get_style_context(mail_button_generate), "suggested-action");
 	
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
@@ -1133,12 +1237,22 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(cal_scrolled), cal_vertical);
 	
+	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_entry_to, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_entry_subject, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_text_view, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_horizontal_buttons), mail_button_generate, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_horizontal_buttons), mail_button_clear, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(mail_vertical), mail_horizontal_buttons, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(mail_scrolled), mail_vertical);
+	
 	gtk_stack_add_titled(GTK_STACK(stack), text_scrolled, "input_text", "Text/URL");
 	gtk_stack_add_titled(GTK_STACK(stack), contact_scrolled, "input_contact", "Contact");
 	gtk_stack_add_titled(GTK_STACK(stack), sms_scrolled, "input_sms", "SMS");
 	gtk_stack_add_titled(GTK_STACK(stack), call_scrolled, "input_call", "Call/Phone number");
 	gtk_stack_add_titled(GTK_STACK(stack), geo_scrolled, "input_geo", "Geolocation");
 	gtk_stack_add_titled(GTK_STACK(stack), cal_scrolled, "input_cal", "Calendar event");
+	gtk_stack_add_titled(GTK_STACK(stack), mail_scrolled, "input_mail", "E-Mail");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
@@ -1150,6 +1264,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(call_button_generate), "clicked", G_CALLBACK(cb_clicked_call_generate), NULL);
 	g_signal_connect(G_OBJECT(geo_button_generate), "clicked", G_CALLBACK(cb_clicked_geo_generate), NULL);
 	g_signal_connect(G_OBJECT(cal_button_generate), "clicked", G_CALLBACK(cb_clicked_cal_generate), NULL);
+	g_signal_connect(G_OBJECT(mail_button_generate), "clicked", G_CALLBACK(cb_clicked_mail_generate), NULL);
 	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact), NULL);
 	g_signal_connect(G_OBJECT(cal_button_file), "file-set", G_CALLBACK(cb_file_set_cal), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
@@ -1158,6 +1273,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(call_button_clear), "clicked", G_CALLBACK(cb_clicked_call_clear), NULL);
 	g_signal_connect(G_OBJECT(geo_button_clear), "clicked", G_CALLBACK(cb_clicked_geo_clear), NULL);
 	g_signal_connect(G_OBJECT(cal_button_clear), "clicked", G_CALLBACK(cb_clicked_cal_clear), NULL);
+	g_signal_connect(G_OBJECT(mail_button_clear), "clicked", G_CALLBACK(cb_clicked_mail_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_first_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_last_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_title), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);

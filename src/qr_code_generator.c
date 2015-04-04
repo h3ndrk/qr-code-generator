@@ -28,9 +28,6 @@
 
 int main(void)
 {
-	// printf("GTK version: %i.%i.%i\n", gtk_major_version, gtk_minor_version, gtk_micro_version);
-	// printf("GLIB version: %i.%i.%i\n", glib_major_version, glib_minor_version, glib_micro_version);
-	
 	// bugfix for comma in floating point outputs with printf
 	gtk_disable_setlocale();
 	
@@ -41,14 +38,6 @@ int main(void)
 	gtk_main();
 	
 	qr_free();
-	
-	// qr_initialize_array(16);
-	// qr_set_pixel(1, 1, TRUE);
-	// printf("%i\n", qr_get_pixel(1, 1));
-	// qr_free_array();
-	
-	// qr_render("Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test! Das ist ein Test!");
-	
 	
 	return 0;
 }
