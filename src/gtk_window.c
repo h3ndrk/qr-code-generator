@@ -51,6 +51,12 @@ static GtkWidget *sms_entry_phone = NULL;
 static GtkWidget *sms_entry_text = NULL;
 static GtkWidget *sms_label_size = NULL;
 static GtkWidget *call_entry = NULL;
+static GtkWidget *geo_entry_latitude = NULL;
+static GtkWidget *geo_entry_longitude = NULL;
+static GtkWidget *geo_radio_north = NULL;
+static GtkWidget *geo_radio_south = NULL;
+static GtkWidget *geo_radio_west = NULL;
+static GtkWidget *geo_radio_east = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -423,6 +429,78 @@ static void cb_clicked_call_clear(GtkWidget *button, gpointer data)
 	gtk_entry_set_text(GTK_ENTRY(call_entry), "");
 }
 
+static void cb_clicked_geo_generate_contact(GtkWidget *button, gpointer data)
+{
+	gint error = 0;
+	gchar *geo_data = NULL;
+	gdouble latitude = 0;
+	gdouble longitude = 0;
+	
+	UNUSED(button);
+	UNUSED(data);
+	
+	latitude = gtk_spin_button_get_value(GTK_SPIN_BUTTON(geo_entry_latitude));
+	longitude = gtk_spin_button_get_value(GTK_SPIN_BUTTON(geo_entry_longitude));
+	
+	if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geo_radio_north)))
+	{
+		latitude *= -1;
+	}
+	
+	if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geo_radio_west)))
+	{
+		longitude *= -1;
+	}
+	
+	geo_data = g_strdup_printf("GEO:%f,%f,0", latitude, longitude);
+	
+	error = qr_render(geo_data);
+	
+	g_free(geo_data);
+	
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
+}
+
+static void cb_clicked_geo_clear(GtkWidget *button, gpointer data)
+{
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_latitude), 0);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_longitude), 0);
+}
+
 void gtk_window_init(void)
 {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -488,6 +566,23 @@ void gtk_window_init(void)
 	GtkWidget *call_button_generate = gtk_button_new_with_label("Generate QR code");
 	GtkWidget *call_button_clear = gtk_button_new_with_label("Clear");
 	GtkWidget *call_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	GtkWidget *geo_label = gtk_label_new(NULL);
+	GtkWidget *geo_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *geo_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	GtkWidget *geo_label_latitude = gtk_label_new("Latitude");
+	GtkWidget *geo_label_longitude = gtk_label_new("Longitude");
+	geo_entry_latitude = gtk_spin_button_new_with_range(-90, 90, 0.01);
+	geo_entry_longitude = gtk_spin_button_new_with_range(-180, 180, 0.01);
+	geo_radio_north = gtk_radio_button_new_with_label(NULL, "North");
+	geo_radio_south = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(geo_radio_north), "South");
+	geo_radio_west = gtk_radio_button_new_with_label(NULL, "West");
+	geo_radio_east = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(geo_radio_west), "East");
+	GtkWidget *geo_button_generate = gtk_button_new_with_label("Generate QR code");
+	GtkWidget *geo_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *geo_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	GtkWidget *geo_horizontal_coords = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
+	GtkWidget *geo_vertical_coords_latitude = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+	GtkWidget *geo_vertical_coords_longitude = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	
 	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
 	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
@@ -497,7 +592,8 @@ void gtk_window_init(void)
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 1, "input_contact", "Contact");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 2, "input_sms", "SMS");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 3, "input_call", "Call/Phone number");
-	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 4, "output_code", "Generated QR code");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 4, "input_geo", "Geolocation");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(switcher), 5, "output_code", "Generated QR code");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(switcher), 0);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
@@ -557,6 +653,19 @@ void gtk_window_init(void)
 	gtk_container_set_border_width(GTK_CONTAINER(call_vertical), 15);
 	gtk_style_context_add_class(gtk_widget_get_style_context(call_button_generate), "suggested-action");
 	
+	gtk_label_set_markup(GTK_LABEL(geo_label), "<span size=\"xx-large\">Generate from geolocation</span>");
+	gtk_widget_set_halign(geo_label, GTK_ALIGN_START);
+	gtk_widget_set_halign(geo_label_latitude, GTK_ALIGN_START);
+	gtk_widget_set_halign(geo_label_longitude, GTK_ALIGN_START);
+	gtk_spin_button_set_digits(GTK_SPIN_BUTTON(geo_entry_latitude), 5);
+	gtk_spin_button_set_digits(GTK_SPIN_BUTTON(geo_entry_longitude), 5);
+	gtk_spin_button_set_increments(GTK_SPIN_BUTTON(geo_entry_latitude), 0.01, 1);
+	gtk_spin_button_set_increments(GTK_SPIN_BUTTON(geo_entry_longitude), 0.01, 1);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_latitude), 0);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_longitude), 0);
+	gtk_container_set_border_width(GTK_CONTAINER(geo_vertical), 15);
+	gtk_style_context_add_class(gtk_widget_get_style_context(geo_button_generate), "suggested-action");
+	
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_vertical), text_label, FALSE, FALSE, 0);
@@ -609,10 +718,28 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(call_vertical), call_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(call_scrolled), call_vertical);
 	
+	gtk_box_pack_start(GTK_BOX(geo_vertical), geo_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_latitude), geo_label_latitude, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_latitude), geo_entry_latitude, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_latitude), geo_radio_north, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_latitude), geo_radio_south, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_longitude), geo_label_longitude, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_longitude), geo_entry_longitude, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_longitude), geo_radio_west, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical_coords_longitude), geo_radio_east, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_horizontal_coords), geo_vertical_coords_latitude, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_horizontal_coords), geo_vertical_coords_longitude, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical), geo_horizontal_coords, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_horizontal_buttons), geo_button_generate, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_horizontal_buttons), geo_button_clear, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(geo_vertical), geo_horizontal_buttons, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(geo_scrolled), geo_vertical);
+	
 	gtk_stack_add_titled(GTK_STACK(stack), text_scrolled, "input_text", "Text/URL");
 	gtk_stack_add_titled(GTK_STACK(stack), contact_scrolled, "input_contact", "Contact");
 	gtk_stack_add_titled(GTK_STACK(stack), sms_scrolled, "input_sms", "SMS");
 	gtk_stack_add_titled(GTK_STACK(stack), call_scrolled, "input_call", "Call/Phone number");
+	gtk_stack_add_titled(GTK_STACK(stack), geo_scrolled, "input_geo", "Geolocation");
 	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
@@ -622,11 +749,13 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(contact_button_generate), "clicked", G_CALLBACK(cb_clicked_contact_generate_contact), NULL);
 	g_signal_connect(G_OBJECT(sms_button_generate), "clicked", G_CALLBACK(cb_clicked_sms_generate_contact), NULL);
 	g_signal_connect(G_OBJECT(call_button_generate), "clicked", G_CALLBACK(cb_clicked_call_generate_contact), NULL);
+	g_signal_connect(G_OBJECT(geo_button_generate), "clicked", G_CALLBACK(cb_clicked_geo_generate_contact), NULL);
 	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact_contact), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_button_clear), "clicked", G_CALLBACK(cb_clicked_contact_clear), NULL);
 	g_signal_connect(G_OBJECT(sms_button_clear), "clicked", G_CALLBACK(cb_clicked_sms_clear), NULL);
 	g_signal_connect(G_OBJECT(call_button_clear), "clicked", G_CALLBACK(cb_clicked_call_clear), NULL);
+	g_signal_connect(G_OBJECT(geo_button_clear), "clicked", G_CALLBACK(cb_clicked_geo_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_first_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_last_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_title), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
