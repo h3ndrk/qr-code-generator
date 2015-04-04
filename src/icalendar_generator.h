@@ -1,0 +1,1 @@
+GString *ical_generate(gchar *description, guint year_start, guint month_start, guint day_start, guint hour_start, guint minute_start, guint year_end, guint month_end, guint day_end, guint hour_end, guint minute_end);

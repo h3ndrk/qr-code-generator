@@ -24,6 +24,7 @@
 #include "gtk_window.h"
 #include "qr_generator.h"
 #include "vcard_generator.h"
+#include "icalendar_generator.h"
 
 static GtkWidget *window = NULL;
 static GtkWidget *headerbar = NULL;
@@ -57,12 +58,15 @@ static GtkWidget *geo_radio_north = NULL;
 static GtkWidget *geo_radio_south = NULL;
 static GtkWidget *geo_radio_west = NULL;
 static GtkWidget *geo_radio_east = NULL;
+static GtkWidget *cal_entry_des = NULL;
 static GtkWidget *cal_date_start = NULL;
 static GtkWidget *cal_date_end = NULL;
 static GtkWidget *cal_time_start_hour = NULL;
 static GtkWidget *cal_time_start_minute = NULL;
 static GtkWidget *cal_time_end_hour = NULL;
 static GtkWidget *cal_time_end_minute = NULL;
+static GtkWidget *cal_button_file = NULL;
+static GtkTextBuffer *cal_text_buffer = NULL;
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -173,7 +177,7 @@ static void cb_clicked_text_clear(GtkWidget *button, gpointer data)
 	gtk_widget_grab_focus(text_entry);
 }
 
-static void cb_clicked_contact_generate_contact(GtkWidget *button, gpointer data)
+static void cb_clicked_contact_generate(GtkWidget *button, gpointer data)
 {
 	gint error = 0;
 	gchar *vcard_data = NULL;
@@ -223,7 +227,7 @@ static void cb_clicked_contact_generate_contact(GtkWidget *button, gpointer data
 	}
 }
 
-static void cb_file_set_contact_contact(GtkFileChooserButton *widget, gpointer data)
+static void cb_file_set_contact(GtkFileChooserButton *widget, gpointer data)
 {
 	gchar *filename = NULL;
 	gchar *file_contents = NULL;
@@ -308,7 +312,7 @@ static void cb_changed_switcher(GtkComboBox *widget, gpointer data)
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), gtk_combo_box_get_active_id(widget));
 }
 
-static void cb_clicked_sms_generate_contact(GtkWidget *button, gpointer data)
+static void cb_clicked_sms_generate(GtkWidget *button, gpointer data)
 {
 	gint error = 0;
 	gchar *sms_data = NULL;
@@ -379,7 +383,7 @@ static void cb_changed_sms_entry(GtkEditable *editable, gpointer data)
 	g_free(character_data);
 }
 
-static void cb_clicked_call_generate_contact(GtkWidget *button, gpointer data)
+static void cb_clicked_call_generate(GtkWidget *button, gpointer data)
 {
 	gint error = 0;
 	gchar *call_data = NULL;
@@ -435,7 +439,7 @@ static void cb_clicked_call_clear(GtkWidget *button, gpointer data)
 	gtk_entry_set_text(GTK_ENTRY(call_entry), "");
 }
 
-static void cb_clicked_geo_generate_contact(GtkWidget *button, gpointer data)
+static void cb_clicked_geo_generate(GtkWidget *button, gpointer data)
 {
 	gint error = 0;
 	gchar *geo_data = NULL;
@@ -505,6 +509,159 @@ static void cb_clicked_geo_clear(GtkWidget *button, gpointer data)
 	
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_latitude), 0);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(geo_entry_longitude), 0);
+}
+
+static void cb_changed_cal_entry(GtkEditable *editable, gpointer data)
+{
+	GString *generated_data = NULL;
+	guint year_start = 0;
+	guint month_start = 0;
+	guint day_start = 0;
+	guint hour_start = 0;
+	guint minute_start = 0;
+	guint year_end = 0;
+	guint month_end = 0;
+	guint day_end = 0;
+	guint hour_end = 0;
+	guint minute_end = 0;
+	
+	UNUSED(editable);
+	UNUSED(data);
+	
+	gtk_calendar_get_date(GTK_CALENDAR(cal_date_start), &year_start, &month_start, &day_start);
+	gtk_calendar_get_date(GTK_CALENDAR(cal_date_end), &year_end, &month_end, &day_end);
+	
+	hour_start = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_start_hour));
+	minute_start = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_start_minute));
+	hour_end = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_end_hour));
+	minute_end = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_end_minute));
+	
+	generated_data = ical_generate((gchar *)gtk_entry_get_text(GTK_ENTRY(cal_entry_des)), year_start, month_start + 1, day_start, hour_start, minute_start, year_end, month_end + 1, day_end, hour_end, minute_end);
+	
+	if(generated_data == NULL)
+	{
+		return;
+	}
+	
+	gtk_text_buffer_set_text(cal_text_buffer, generated_data->str, -1);
+	
+	g_string_free(generated_data, TRUE);
+}
+
+static void cb_changed_cal_time(GtkComboBox *widget, gpointer data)
+{
+	UNUSED(widget);
+	UNUSED(data);
+	
+	cb_changed_cal_entry(NULL, NULL);
+}
+
+static void cb_changed_cal_date(GtkCalendar *widget, gpointer data)
+{
+	UNUSED(widget);
+	UNUSED(data);
+	
+	cb_changed_cal_entry(NULL, NULL);
+}
+
+static void cb_clicked_cal_clear(GtkWidget *button, gpointer data)
+{
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_entry_set_text(GTK_ENTRY(cal_entry_des), "Entry description");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_start_hour), 12);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_start_minute), 0);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_hour), 12);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_minute), 0);
+}
+
+static void cb_clicked_cal_generate(GtkWidget *button, gpointer data)
+{
+	gint error = 0;
+	gchar *icalendar_data = NULL;
+	GtkTextIter start_iter;
+	GtkTextIter end_iter;
+	
+	UNUSED(button);
+	UNUSED(data);
+	
+	gtk_text_buffer_get_start_iter(cal_text_buffer, &start_iter);
+	gtk_text_buffer_get_end_iter(cal_text_buffer, &end_iter);
+	icalendar_data = gtk_text_buffer_get_text(cal_text_buffer, &start_iter, &end_iter, TRUE);
+	
+	error = qr_render(icalendar_data);
+	
+	switch(error)
+	{
+		case ERR_NO_ERROR:
+		{
+			gtk_widget_queue_draw(drawing);
+			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(switcher), "output_code");
+			
+			break;
+		}
+		case ERR_INVALID_INPUT:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Invalid input.\n\nTry to type something into the input.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_NO_MEMORY:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Failed to allocate memory for input.\n\nThis means that your systems tells this program that no more memory is available. Try to close some programs.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+		case ERR_RANGE:
+		{
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to generate QR code: Input data is too large.\n\nQR codes have a maximum size of input data. Try to shorten your input text or URL.");
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			break;
+		}
+	}
+}
+
+static void cb_file_set_cal(GtkFileChooserButton *widget, gpointer data)
+{
+	gchar *filename = NULL;
+	gchar *file_contents = NULL;
+	GError *error = NULL;
+	
+	UNUSED(data);
+	
+	filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget));
+	
+	if(filename == NULL)
+	{
+		GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to retrieve path of selected file: No file selected.");
+		gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy(dialog);
+	}
+	else
+	{
+		g_file_get_contents(filename, &file_contents, NULL, &error);
+		
+		if(error != NULL)
+		{
+			fprintf(stderr, "Failed to open file %s: %s\n", filename, error->message);
+			
+			GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "<span size=\"x-large\">Error</span>\n\nFailed to open file: %s\n\n%s", filename, error->message);
+			gtk_dialog_run(GTK_DIALOG(dialog));
+			gtk_widget_destroy(dialog);
+			
+			g_error_free(error);
+		}
+		
+		gtk_text_buffer_set_text(cal_text_buffer, file_contents, -1);
+		
+		g_free(file_contents);
+		g_free(filename);
+	}
 }
 
 void gtk_window_init(void)
@@ -592,6 +749,7 @@ void gtk_window_init(void)
 	GtkWidget *cal_label = gtk_label_new(NULL);
 	GtkWidget *cal_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *cal_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	cal_entry_des = gtk_entry_new();
 	cal_date_start = gtk_calendar_new();
 	cal_date_end = gtk_calendar_new();
 	GtkWidget *cal_label_start = gtk_label_new("Start date and time");
@@ -610,6 +768,9 @@ void gtk_window_init(void)
 	GtkWidget *cal_horizontal_date_pickers_start_time = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *cal_horizontal_date_pickers_end_time = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *cal_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	cal_button_file = gtk_file_chooser_button_new("Select a .ics (iCalendar) file", GTK_FILE_CHOOSER_ACTION_OPEN);
+	GtkWidget *cal_text_view = gtk_text_view_new();
+	cal_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(cal_text_view));
 	
 	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "QR-Code Generator");
 	gtk_header_bar_set_has_subtitle(GTK_HEADER_BAR(headerbar), FALSE);
@@ -870,8 +1031,14 @@ void gtk_window_init(void)
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_end_minute), 58, "58", "58");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_end_minute), 59, "59", "59");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_minute), 0);
+	gtk_entry_set_placeholder_text(GTK_ENTRY(cal_entry_des), "Event description");
+	gtk_entry_set_text(GTK_ENTRY(cal_entry_des), "Event description");
 	gtk_container_set_border_width(GTK_CONTAINER(cal_vertical), 15);
+	GtkFileFilter *filter_cal = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(filter_cal, "*.ics");
+	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(cal_button_file), filter_cal);
 	gtk_style_context_add_class(gtk_widget_get_style_context(cal_button_generate), "suggested-action");
+	cb_changed_cal_entry(NULL, NULL); // initialize icalendar
 	
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(text_horizontal_buttons), text_button_clear, FALSE, FALSE, 0);
@@ -943,6 +1110,8 @@ void gtk_window_init(void)
 	gtk_container_add(GTK_CONTAINER(geo_scrolled), geo_vertical);
 	
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_button_file, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_entry_des, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_label_start, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_date_start, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_start_time), cal_time_start_hour, TRUE, TRUE, 0);
@@ -958,6 +1127,7 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers), cal_vertical_date_pickers_start, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers), cal_vertical_date_pickers_end, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_horizontal_date_pickers, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_text_view, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_buttons), cal_button_generate, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_buttons), cal_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_horizontal_buttons, FALSE, FALSE, 0);
@@ -975,16 +1145,19 @@ void gtk_window_init(void)
 	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
 	g_signal_connect(G_OBJECT(text_button_generate), "clicked", G_CALLBACK(cb_clicked_text_generate), NULL);
-	g_signal_connect(G_OBJECT(contact_button_generate), "clicked", G_CALLBACK(cb_clicked_contact_generate_contact), NULL);
-	g_signal_connect(G_OBJECT(sms_button_generate), "clicked", G_CALLBACK(cb_clicked_sms_generate_contact), NULL);
-	g_signal_connect(G_OBJECT(call_button_generate), "clicked", G_CALLBACK(cb_clicked_call_generate_contact), NULL);
-	g_signal_connect(G_OBJECT(geo_button_generate), "clicked", G_CALLBACK(cb_clicked_geo_generate_contact), NULL);
-	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact_contact), NULL);
+	g_signal_connect(G_OBJECT(contact_button_generate), "clicked", G_CALLBACK(cb_clicked_contact_generate), NULL);
+	g_signal_connect(G_OBJECT(sms_button_generate), "clicked", G_CALLBACK(cb_clicked_sms_generate), NULL);
+	g_signal_connect(G_OBJECT(call_button_generate), "clicked", G_CALLBACK(cb_clicked_call_generate), NULL);
+	g_signal_connect(G_OBJECT(geo_button_generate), "clicked", G_CALLBACK(cb_clicked_geo_generate), NULL);
+	g_signal_connect(G_OBJECT(cal_button_generate), "clicked", G_CALLBACK(cb_clicked_cal_generate), NULL);
+	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact), NULL);
+	g_signal_connect(G_OBJECT(cal_button_file), "file-set", G_CALLBACK(cb_file_set_cal), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_button_clear), "clicked", G_CALLBACK(cb_clicked_contact_clear), NULL);
 	g_signal_connect(G_OBJECT(sms_button_clear), "clicked", G_CALLBACK(cb_clicked_sms_clear), NULL);
 	g_signal_connect(G_OBJECT(call_button_clear), "clicked", G_CALLBACK(cb_clicked_call_clear), NULL);
 	g_signal_connect(G_OBJECT(geo_button_clear), "clicked", G_CALLBACK(cb_clicked_geo_clear), NULL);
+	g_signal_connect(G_OBJECT(cal_button_clear), "clicked", G_CALLBACK(cb_clicked_cal_clear), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_first_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_last_name), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_title), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
@@ -999,6 +1172,13 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(contact_entry_phone_mobile), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_phone_business), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
 	g_signal_connect(G_OBJECT(contact_entry_website), "changed", G_CALLBACK(cb_changed_contact_entry), NULL);
+	g_signal_connect(G_OBJECT(cal_entry_des), "changed", G_CALLBACK(cb_changed_cal_entry), NULL);
+	g_signal_connect(G_OBJECT(cal_time_start_hour), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
+	g_signal_connect(G_OBJECT(cal_time_start_minute), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
+	g_signal_connect(G_OBJECT(cal_time_end_hour), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
+	g_signal_connect(G_OBJECT(cal_time_end_minute), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
+	g_signal_connect(G_OBJECT(cal_date_start), "day-selected", G_CALLBACK(cb_changed_cal_date), NULL);
+	g_signal_connect(G_OBJECT(cal_date_end), "day-selected", G_CALLBACK(cb_changed_cal_date), NULL);
 	g_signal_connect(G_OBJECT(sms_entry_text), "changed", G_CALLBACK(cb_changed_sms_entry), NULL);
 	g_signal_connect(G_OBJECT(switcher), "changed", G_CALLBACK(cb_changed_switcher), NULL);
 	

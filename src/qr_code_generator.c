@@ -24,6 +24,7 @@
 #include "gtk_window.h"
 #include "qr_generator.h"
 #include "vcard_generator.h"
+#include "icalendar_generator.h"
 
 int main(void)
 {

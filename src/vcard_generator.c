@@ -38,7 +38,7 @@ GString *vcard_generate(gchar *first_name, gchar *last_name, gchar *title, gchar
 	if(strlen(phone_business) > 0) g_string_append_printf(generated_data, "TEL;type=WORK:%s\n", phone_business);
 	if(strlen(street) > 0 || strlen(city) > 0 || strlen(country) > 0) g_string_append_printf(generated_data, "ADR:;;%s;%s;;%s;%s\n", street, city, postal_code, country);
 	if(strlen(website) > 0) g_string_append_printf(generated_data, "URL:%s\n", website);
-	g_string_append_printf(generated_data, "END:VCARD\n");
+	g_string_append_printf(generated_data, "END:VCARD");
 	
 	return generated_data;
 }
