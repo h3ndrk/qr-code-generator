@@ -79,18 +79,21 @@ static GtkWidget *wlan_check_hidden = NULL;
 static GtkWidget *wlan_combo_auth = NULL;
 static GtkWidget *stack_switcher_sidebar = NULL;
 static GtkWidget *button_generate = NULL;
+static GtkWidget *button_export = NULL;
 
 static void gtk_set_output(void)
 {
 	gtk_widget_queue_draw(drawing);
 	gtk_stack_set_visible_child_name(GTK_STACK(root_stack), "output");
 	gtk_button_set_label(GTK_BUTTON(button_generate), "Back");
+	gtk_widget_show(button_export);
 }
 
 static void gtk_set_input(void)
 {
 	gtk_stack_set_visible_child_name(GTK_STACK(root_stack), "input");
 	gtk_button_set_label(GTK_BUTTON(button_generate), "Generate");
+	gtk_widget_hide(button_export);
 }
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
@@ -105,10 +108,6 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	guint x = 0;
 	guint y = 0;
 	guint index = 0;
-	cairo_text_extents_t extents;
-	gdouble text_x = 0;
-	gdouble text_y = 0;
-	gchar *text = "Nothing generated yet.";
 	
 	UNUSED(data);
 	
@@ -135,19 +134,7 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	qr_code_size = qr_get_size();
 	
 	// QR code rendering
-	if(qr_code_data == NULL)
-	{
-		cairo_set_font_size(cr, 15.0);
-		
-		cairo_text_extents(cr, text, &extents);
-		text_x = offset_x + (size / 2) - (extents.width / 2 + extents.x_bearing);
-		text_y = offset_y + (size / 2) - (extents.height / 2 + extents.y_bearing);
-		
-		cairo_move_to(cr, text_x, text_y);
-		cairo_set_source_rgb(cr, 0, 0, 0);
-		cairo_show_text(cr, text);
-	}
-	else
+	if(qr_code_data != NULL)
 	{
 		for(y = 0; y < (guint)qr_code_size; y++)
 		{
@@ -165,6 +152,51 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	}
 	
 	return FALSE;
+}
+
+static void gtk_render_to_path_png(guint size, gchar *path)
+{
+	GArray *qr_code_data = NULL;
+	gint qr_code_size = 0;
+	guint x = 0;
+	guint y = 0;
+	guint index = 0;
+	cairo_surface_t *surface = NULL;
+	cairo_t *cr = NULL;
+	
+	surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, size, size);
+	cr = cairo_create(surface);
+	
+	// white background
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, 0, 0, size, size);
+	cairo_fill(cr);
+	
+	qr_code_data = qr_get_pixels();
+	qr_code_size = qr_get_size();
+	
+	// QR code rendering
+	if(qr_code_data != NULL)
+	{
+		for(y = 0; y < (guint)qr_code_size; y++)
+		{
+			for(x = 0; x < (guint)qr_code_size; x++)
+			{
+				index = (y * qr_code_size) + x;
+				if(g_array_index(qr_code_data, gboolean, index))
+				{
+					cairo_set_source_rgb(cr, 0, 0, 0);
+					cairo_rectangle(cr, floor((x + 1) * ((float)size / (qr_code_size + 2))), floor((y + 1) * ((float)size / (qr_code_size + 2))), ceil((float)size / (qr_code_size + 2)), ceil((float)size / (qr_code_size + 2)));
+					cairo_fill(cr);
+				}
+			}
+		}
+	}
+	
+	cairo_surface_write_to_png(surface, path);
+	
+	cairo_destroy(cr);
+	cairo_surface_destroy(surface);
 }
 
 static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
@@ -689,13 +721,13 @@ static void cb_changed_cal_date(GtkCalendar *widget, gpointer data)
 	cb_changed_cal_entry(NULL, NULL);
 }
 
-static void cb_changed_cal_time_zones(GtkCalendar *widget, gpointer data)
-{
-	UNUSED(widget);
-	UNUSED(data);
+// static void cb_changed_cal_time_zones(GtkCalendar *widget, gpointer data)
+// {
+// 	UNUSED(widget);
+// 	UNUSED(data);
 	
-	cb_changed_cal_entry(NULL, NULL);
-}
+// 	cb_changed_cal_entry(NULL, NULL);
+// }
 
 static void cb_clicked_cal_clear(GtkWidget *button, gpointer data)
 {
@@ -989,12 +1021,45 @@ static void cb_clicked_generate(GtkWidget *button, gpointer data)
 	}
 }
 
-static void cb_toggled_cal_dst(GtkToggleButton *togglebutton, gpointer data)
-{
-	UNUSED(togglebutton);
-	UNUSED(data);
+// static void cb_toggled_cal_dst(GtkToggleButton *togglebutton, gpointer data)
+// {
+// 	UNUSED(togglebutton);
+// 	UNUSED(data);
 	
-	cb_changed_cal_entry(NULL, NULL);
+// 	cb_changed_cal_entry(NULL, NULL);
+// }
+
+static void cb_clicked_export(GtkWidget *button, gpointer data)
+{
+	gint result = 0;
+	gchar *filename = NULL;
+	GtkWidget *export_box = NULL;
+	GtkWidget *export_size_label = NULL;
+	GtkWidget *export_size = NULL;
+	GtkWidget *file_chooser_dialog = NULL;
+	
+	export_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	export_size_label = gtk_label_new("QR code size (in pixel):");
+	export_size = gtk_spin_button_new_with_range(0, 2048, 1);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(export_size), 512);
+	gtk_box_pack_start(GTK_BOX(export_box), export_size_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(export_box), export_size, FALSE, FALSE, 0);
+	gtk_widget_show_all(export_box);
+	
+	file_chooser_dialog = gtk_file_chooser_dialog_new("Save file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_SAVE, "Cancel", GTK_RESPONSE_CANCEL, "Save", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(file_chooser_dialog), export_box);
+	result = gtk_dialog_run(GTK_DIALOG(file_chooser_dialog));
+	
+	if(result == GTK_RESPONSE_ACCEPT)
+	{
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser_dialog));
+		
+		gtk_render_to_path_png(gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(export_size)), filename);
+		
+		g_free(filename);
+	}
+	
+	gtk_widget_destroy(file_chooser_dialog);
 }
 
 void gtk_window_init(void)
@@ -1024,6 +1089,7 @@ void gtk_window_init(void)
 	stack_switcher_sidebar = gtk_list_box_new();
 	GtkWidget *stack_switcher_sidebar_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	button_generate = gtk_button_new_with_label("Generate");
+	button_export = gtk_button_new_with_label("Export");
 	GtkWidget *root_horizontal_pane = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
 	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
@@ -1153,6 +1219,7 @@ void gtk_window_init(void)
 	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
 	gtk_style_context_add_class(gtk_widget_get_style_context(button_generate), "suggested-action");
 	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), button_generate);
+	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), button_export);
 	
 	gtk_label_set_markup(GTK_LABEL(text_label), "<span size=\"xx-large\">Generate from text or URL</span>");
 	gtk_widget_set_halign(text_label, GTK_ALIGN_START);
@@ -1693,6 +1760,7 @@ void gtk_window_init(void)
 	
 	g_signal_connect(G_OBJECT(drawing), "draw", G_CALLBACK(cb_drawing), NULL);
 	g_signal_connect(G_OBJECT(button_generate), "clicked", G_CALLBACK(cb_clicked_generate), NULL);
+	g_signal_connect(G_OBJECT(button_export), "clicked", G_CALLBACK(cb_clicked_export), NULL);
 	g_signal_connect(G_OBJECT(contact_button_file), "file-set", G_CALLBACK(cb_file_set_contact), NULL);
 	g_signal_connect(G_OBJECT(cal_button_file), "file-set", G_CALLBACK(cb_file_set_cal), NULL);
 	g_signal_connect(G_OBJECT(text_button_clear), "clicked", G_CALLBACK(cb_clicked_text_clear), NULL);
@@ -1735,4 +1803,5 @@ void gtk_window_init(void)
 	gtk_container_add(GTK_CONTAINER(window), root_stack);
 	
 	gtk_widget_show_all(window);
+	gtk_widget_hide(button_export);
 }
