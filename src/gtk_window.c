@@ -895,6 +895,9 @@ void gtk_window_init(void)
 	GtkWidget *contact_label = gtk_label_new(NULL);
 	GtkWidget *contact_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *contact_scrolled = gtk_scrolled_window_new(NULL, NULL);
+	GtkWidget *contact_description_label = gtk_label_new("Either vCard file import or manual information entering are supported. Modify the generated vCard at the bottom.");
+	GtkWidget *contact_button_file_label = gtk_label_new("vCard (.vcf) file");
+	GtkWidget *contact_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	contact_button_file = gtk_file_chooser_button_new("Select a .vcf (vCard) contact", GTK_FILE_CHOOSER_ACTION_OPEN);
 	GtkWidget *contact_button_clear = gtk_button_new_with_label("Clear");
 	GtkWidget *contact_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -972,6 +975,9 @@ void gtk_window_init(void)
 	GtkWidget *cal_horizontal_date_pickers_start_time = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *cal_horizontal_date_pickers_end_time = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *cal_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	GtkWidget *cal_description_label = gtk_label_new("Either iCalendar file import or manual information entering are supported. Modify the generated iCalendar at the bottom.");
+	GtkWidget *cal_button_file_label = gtk_label_new("iCalendar (.ics) file");
+	GtkWidget *cal_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	cal_button_file = gtk_file_chooser_button_new("Select a .ics (iCalendar) file", GTK_FILE_CHOOSER_ACTION_OPEN);
 	GtkWidget *cal_text_view = gtk_text_view_new();
 	cal_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(cal_text_view));
@@ -1007,6 +1013,9 @@ void gtk_window_init(void)
 	
 	gtk_label_set_markup(GTK_LABEL(contact_label), "<span size=\"xx-large\">Generate from contact</span>");
 	gtk_widget_set_halign(contact_label, GTK_ALIGN_START);
+	gtk_widget_set_halign(contact_description_label, GTK_ALIGN_START);
+	gtk_label_set_line_wrap(GTK_LABEL(contact_description_label), TRUE);
+	gtk_label_set_justify(GTK_LABEL(contact_description_label), GTK_JUSTIFY_FILL);
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_first_name), "First name");
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_last_name), "Last name");
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_title), "Title");
@@ -1074,6 +1083,9 @@ void gtk_window_init(void)
 	gtk_widget_set_halign(cal_label, GTK_ALIGN_START);
 	gtk_widget_set_halign(cal_label_start, GTK_ALIGN_START);
 	gtk_widget_set_halign(cal_label_end, GTK_ALIGN_START);
+	gtk_widget_set_halign(cal_description_label, GTK_ALIGN_START);
+	gtk_label_set_line_wrap(GTK_LABEL(cal_description_label), TRUE);
+	gtk_label_set_justify(GTK_LABEL(cal_description_label), GTK_JUSTIFY_FILL);
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_start_hour), 0, "0", "00");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_start_hour), 1, "1", "01");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_start_hour), 2, "2", "02");
@@ -1303,7 +1315,10 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(contact_horizontal_6), contact_entry_website, TRUE, TRUE, 0);
 	gtk_box_pack_end(GTK_BOX(contact_horizontal_buttons), contact_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_label, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_button_file, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_description_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(contact_button_file_box), contact_button_file_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(contact_button_file_box), contact_button_file, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_button_file_box, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_0, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_1, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(contact_vertical), contact_horizontal_2, FALSE, FALSE, 0);
@@ -1346,7 +1361,10 @@ void gtk_window_init(void)
 	gtk_container_add(GTK_CONTAINER(geo_scrolled), geo_vertical);
 	
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_label, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_button_file, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_description_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_button_file_box), cal_button_file_label, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_button_file_box), cal_button_file, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_button_file_box, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_entry_des, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_label_start, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_date_start, FALSE, FALSE, 0);
