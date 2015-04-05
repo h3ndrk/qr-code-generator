@@ -64,6 +64,9 @@ static GtkWidget *cal_time_start_hour = NULL;
 static GtkWidget *cal_time_start_minute = NULL;
 static GtkWidget *cal_time_end_hour = NULL;
 static GtkWidget *cal_time_end_minute = NULL;
+static GtkWidget *cal_time_zones = NULL;
+static GtkWidget *cal_time_zones_dst_start = NULL;
+static GtkWidget *cal_time_zones_dst_end = NULL;
 static GtkWidget *cal_button_file = NULL;
 static GtkTextBuffer *cal_text_buffer = NULL;
 static GtkWidget *mail_entry_to = NULL;
@@ -524,6 +527,91 @@ static void cb_changed_cal_entry(GtkEditable *editable, gpointer data)
 	guint day_end = 0;
 	guint hour_end = 0;
 	guint minute_end = 0;
+	gdouble timezones[] =
+	{
+		-12,
+		-11,
+		-10,
+		-9,
+		-8,
+		-8,
+		-7,
+		-7,
+		-7,
+		-6,
+		-6,
+		-6,
+		-6,
+		-5,
+		-5,
+		-5,
+		-4,
+		-4,
+		-4,
+		-4,
+		-3.5,
+		-3,
+		-3,
+		-3,
+		-3,
+		-2,
+		-1,
+		-1,
+		0,
+		0,
+		1,
+		1,
+		1,
+		1,
+		1,
+		2,
+		2,
+		2,
+		2,
+		2,
+		2,
+		2,
+		2,
+		2,
+		3,
+		3,
+		3,
+		3,
+		3.5,
+		4,
+		4,
+		4,
+		4.5,
+		5,
+		5,
+		5.5,
+		5.5,
+		5.75,
+		6,
+		6,
+		6.5,
+		7,
+		7,
+		8,
+		8,
+		8,
+		8,
+		8,
+		9,
+		9,
+		9,
+		9.5,
+		9.5,
+		10,
+		10,
+		10,
+		10,
+		10,
+		11,
+		12,
+		12,
+		13
+	};
 	
 	UNUSED(editable);
 	UNUSED(data);
@@ -535,6 +623,22 @@ static void cb_changed_cal_entry(GtkEditable *editable, gpointer data)
 	minute_start = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_start_minute));
 	hour_end = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_end_hour));
 	minute_end = gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_end_minute));
+	
+	hour_start -= timezones[gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_zones))];
+	hour_end -= timezones[gtk_combo_box_get_active(GTK_COMBO_BOX(cal_time_zones))];
+	
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cal_time_zones_dst_start)))
+	{
+		hour_start -= 1;
+	}
+	
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cal_time_zones_dst_end)))
+	{
+		hour_end -= 1;
+	}
+	
+	hour_start %= 24;
+	hour_end %= 24;
 	
 	generated_data = ical_generate((gchar *)gtk_entry_get_text(GTK_ENTRY(cal_entry_des)), year_start, month_start + 1, day_start, hour_start, minute_start, year_end, month_end + 1, day_end, hour_end, minute_end);
 	
@@ -564,6 +668,14 @@ static void cb_changed_cal_date(GtkCalendar *widget, gpointer data)
 	cb_changed_cal_entry(NULL, NULL);
 }
 
+static void cb_changed_cal_time_zones(GtkCalendar *widget, gpointer data)
+{
+	UNUSED(widget);
+	UNUSED(data);
+	
+	cb_changed_cal_entry(NULL, NULL);
+}
+
 static void cb_clicked_cal_clear(GtkWidget *button, gpointer data)
 {
 	UNUSED(button);
@@ -574,6 +686,9 @@ static void cb_clicked_cal_clear(GtkWidget *button, gpointer data)
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_start_minute), 0);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_hour), 12);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_minute), 0);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_zones), 29);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cal_time_zones_dst_start), FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cal_time_zones_dst_end), FALSE);
 }
 
 static void cb_clicked_cal_generate(GtkWidget *button, gpointer data)
@@ -853,6 +968,14 @@ static void cb_clicked_generate(GtkWidget *button, gpointer data)
 	}
 }
 
+static void cb_toggled_cal_dst(GtkToggleButton *togglebutton, gpointer data)
+{
+	UNUSED(togglebutton);
+	UNUSED(data);
+	
+	cb_changed_cal_entry(NULL, NULL);
+}
+
 void gtk_window_init(void)
 {
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -968,6 +1091,9 @@ void gtk_window_init(void)
 	cal_time_start_minute = gtk_combo_box_text_new();
 	cal_time_end_hour = gtk_combo_box_text_new();
 	cal_time_end_minute = gtk_combo_box_text_new();
+	cal_time_zones = gtk_combo_box_text_new();
+	cal_time_zones_dst_start = gtk_check_button_new_with_label("Summer time (DST)");
+	cal_time_zones_dst_end = gtk_check_button_new_with_label("Summer time (DST)");
 	GtkWidget *cal_button_clear = gtk_button_new_with_label("Clear");
 	GtkWidget *cal_horizontal_date_pickers = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	GtkWidget *cal_vertical_date_pickers_start = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
@@ -1258,6 +1384,89 @@ void gtk_window_init(void)
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_end_minute), 58, "58", "58");
 	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_end_minute), 59, "59", "59");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_end_minute), 0);
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 0, "0", "(GMT-12:00) International Date Line West");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 1, "1", "(GMT-11:00) Midway Island, Samoa");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 2, "2", "(GMT-10:00) Hawaii");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 3, "3", "(GMT-09:00) Alaska");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 4, "4", "(GMT-08:00) Pacific Time (US & Canada)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 5, "5", "(GMT-08:00) Tijuana, Baja California");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 6, "6", "(GMT-07:00) Arizona");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 7, "7", "(GMT-07:00) Chihuahua, La Paz, Mazatlan");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 8, "8", "(GMT-07:00) Mountain Time (US & Canada)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 9, "9", "(GMT-06:00) Central America");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 10, "10", "(GMT-06:00) Central Time (US & Canada)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 11, "11", "(GMT-06:00) Guadalajara, Mexico City, Monterrey");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 12, "12", "(GMT-06:00) Saskatchewan");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 13, "13", "(GMT-05:00) Bogota, Lima, Quito, Rio Branco");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 14, "14", "(GMT-05:00) Eastern Time (US & Canada)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 15, "15", "(GMT-05:00) Indiana (East)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 16, "16", "(GMT-04:00) Atlantic Time (Canada)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 17, "17", "(GMT-04:00) Caracas, La Paz");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 18, "18", "(GMT-04:00) Manaus");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 19, "19", "(GMT-04:00) Santiago");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 20, "20", "(GMT-03:30) Newfoundland");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 21, "21", "(GMT-03:00) Brasilia");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 22, "22", "(GMT-03:00) Buenos Aires, Georgetown");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 23, "23", "(GMT-03:00) Greenland");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 24, "24", "(GMT-03:00) Montevideo");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 25, "25", "(GMT-02:00) Mid-Atlantic");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 26, "26", "(GMT-01:00) Cape Verde Is.");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 27, "27", "(GMT-01:00) Azores");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 28, "28", "(GMT+00:00) Casablanca, Monrovia, Reykjavik");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 29, "29", "(GMT+00:00) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 30, "30", "(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 31, "31", "(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 32, "32", "(GMT+01:00) Brussels, Copenhagen, Madrid, Paris");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 33, "33", "(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 34, "34", "(GMT+01:00) West Central Africa");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 35, "35", "(GMT+02:00) Amman");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 36, "36", "(GMT+02:00) Athens, Bucharest, Istanbul");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 37, "37", "(GMT+02:00) Beirut");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 38, "38", "(GMT+02:00) Cairo");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 39, "39", "(GMT+02:00) Harare, Pretoria");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 40, "40", "(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 41, "41", "(GMT+02:00) Jerusalem");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 42, "42", "(GMT+02:00) Minsk");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 43, "43", "(GMT+02:00) Windhoek");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 44, "44", "(GMT+03:00) Kuwait, Riyadh, Baghdad");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 45, "45", "(GMT+03:00) Moscow, St. Petersburg, Volgograd");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 46, "46", "(GMT+03:00) Nairobi");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 47, "47", "(GMT+03:00) Tbilisi");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 48, "48", "(GMT+03:30) Tehran");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 49, "49", "(GMT+04:00) Abu Dhabi, Muscat");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 50, "50", "(GMT+04:00) Baku");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 51, "51", "(GMT+04:00) Yerevan");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 52, "52", "(GMT+04:30) Kabul");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 53, "53", "(GMT+05:00) Yekaterinburg");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 54, "54", "(GMT+05:00) Islamabad, Karachi, Tashkent");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 55, "55", "(GMT+05:30) Sri Jayawardenapura");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 56, "56", "(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 57, "57", "(GMT+05:45) Kathmandu");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 58, "58", "(GMT+06:00) Almaty, Novosibirsk");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 59, "59", "(GMT+06:00) Astana, Dhaka");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 60, "60", "(GMT+06:30) Yangon (Rangoon)");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 61, "61", "(GMT+07:00) Bangkok, Hanoi, Jakarta");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 62, "62", "(GMT+07:00) Krasnoyarsk");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 63, "63", "(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 64, "64", "(GMT+08:00) Kuala Lumpur, Singapore");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 65, "65", "(GMT+08:00) Irkutsk, Ulaan Bataar");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 66, "66", "(GMT+08:00) Perth");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 67, "67", "(GMT+08:00) Taipei");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 68, "68", "(GMT+09:00) Osaka, Sapporo, Tokyo");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 69, "69", "(GMT+09:00) Seoul");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 70, "70", "(GMT+09:00) Yakutsk");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 71, "71", "(GMT+09:30) Adelaide");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 72, "72", "(GMT+09:30) Darwin");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 73, "73", "(GMT+10:00) Brisbane");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 74, "74", "(GMT+10:00) Canberra, Melbourne, Sydney");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 75, "75", "(GMT+10:00) Hobart");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 76, "76", "(GMT+10:00) Guam, Port Moresby");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 77, "77", "(GMT+10:00) Vladivostok");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 78, "78", "(GMT+11:00) Magadan, Solomon Is., New Caledonia");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 79, "79", "(GMT+12:00) Auckland, Wellington");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 80, "80", "(GMT+12:00) Fiji, Kamchatka, Marshall Is.");
+	gtk_combo_box_text_insert(GTK_COMBO_BOX_TEXT(cal_time_zones), 81, "81", "(GMT+13:00) Nuku'alofa");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(cal_time_zones), 29);
 	gtk_entry_set_placeholder_text(GTK_ENTRY(cal_entry_des), "Event description");
 	gtk_entry_set_text(GTK_ENTRY(cal_entry_des), "Event description");
 	gtk_container_set_border_width(GTK_CONTAINER(cal_vertical), 15);
@@ -1372,15 +1581,18 @@ void gtk_window_init(void)
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_start_time), cal_label_start_colon, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_start_time), cal_time_start_minute, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_horizontal_date_pickers_start_time, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_start), cal_time_zones_dst_start, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_end), cal_label_end, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_end), cal_date_end, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_end_time), cal_time_end_hour, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_end_time), cal_label_end_colon, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers_end_time), cal_time_end_minute, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_end), cal_horizontal_date_pickers_end_time, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical_date_pickers_end), cal_time_zones_dst_end, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers), cal_vertical_date_pickers_start, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_horizontal_date_pickers), cal_vertical_date_pickers_end, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_horizontal_date_pickers, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_time_zones, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_text_view, FALSE, FALSE, 0);
 	gtk_box_pack_end(GTK_BOX(cal_horizontal_buttons), cal_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(cal_vertical), cal_horizontal_buttons, FALSE, FALSE, 0);
@@ -1488,11 +1700,14 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(cal_time_start_minute), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
 	g_signal_connect(G_OBJECT(cal_time_end_hour), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
 	g_signal_connect(G_OBJECT(cal_time_end_minute), "changed", G_CALLBACK(cb_changed_cal_time), NULL);
+	g_signal_connect(G_OBJECT(cal_time_zones), "changed", G_CALLBACK(cb_changed_cal_time_zones), NULL);
 	g_signal_connect(G_OBJECT(cal_date_start), "day-selected", G_CALLBACK(cb_changed_cal_date), NULL);
 	g_signal_connect(G_OBJECT(cal_date_end), "day-selected", G_CALLBACK(cb_changed_cal_date), NULL);
 	g_signal_connect(G_OBJECT(sms_entry_text), "changed", G_CALLBACK(cb_changed_sms_entry), NULL);
 	g_signal_connect(G_OBJECT(wlan_combo_auth), "changed", G_CALLBACK(cb_changed_wlan_combo), NULL);
 	g_signal_connect(G_OBJECT(stack_switcher_sidebar), "row-activated", G_CALLBACK(cb_selected_stack_switcher), NULL);
+	g_signal_connect(G_OBJECT(cal_time_zones_dst_start), "toggled", G_CALLBACK(cb_toggled_cal_dst), NULL);
+	g_signal_connect(G_OBJECT(cal_time_zones_dst_end), "toggled", G_CALLBACK(cb_toggled_cal_dst), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	gtk_container_add(GTK_CONTAINER(window), root_horizontal_pane);
