@@ -27,9 +27,9 @@ GString *ical_generate(gchar *description, guint year_start, guint month_start, 
 	GString *generated_data = NULL;
 	
 	generated_data = g_string_new("BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n");
-	g_string_append_printf(generated_data, "DTSTAMP:%i%s%i%s%iT%s%i%s%i00Z\n", year_start, (month_start<10)?("0"):(""), month_start, (day_start<10)?("0"):(""), day_start, (hour_start<10)?("0"):(""), hour_start, (minute_start<10)?("0"):(""), minute_start);
-	g_string_append_printf(generated_data, "DTSTART:%i%s%i%s%iT%s%i%s%i00Z\n", year_start, (month_start<10)?("0"):(""), month_start, (day_start<10)?("0"):(""), day_start, (hour_start<10)?("0"):(""), hour_start, (minute_start<10)?("0"):(""), minute_start);
-	g_string_append_printf(generated_data, "DTEND:%i%s%i%s%iT%s%i%s%i00Z\n", year_end, (month_end<10)?("0"):(""), month_end, (day_end<10)?("0"):(""), day_end, (hour_end<10)?("0"):(""), hour_end, (minute_end<10)?("0"):(""), minute_end);
+	g_string_append_printf(generated_data, "DTSTAMP:%i%s%i%s%iT%s%i%s%i00\n", year_start, (month_start<10)?("0"):(""), month_start, (day_start<10)?("0"):(""), day_start, (hour_start<10)?("0"):(""), hour_start, (minute_start<10)?("0"):(""), minute_start);
+	g_string_append_printf(generated_data, "DTSTART:%i%s%i%s%iT%s%i%s%i00\n", year_start, (month_start<10)?("0"):(""), month_start, (day_start<10)?("0"):(""), day_start, (hour_start<10)?("0"):(""), hour_start, (minute_start<10)?("0"):(""), minute_start);
+	g_string_append_printf(generated_data, "DTEND:%i%s%i%s%iT%s%i%s%i00\n", year_end, (month_end<10)?("0"):(""), month_end, (day_end<10)?("0"):(""), day_end, (hour_end<10)?("0"):(""), hour_end, (minute_end<10)?("0"):(""), minute_end);
 	g_string_append_printf(generated_data, "SUMMARY:%s\n", description);
 	g_string_append_printf(generated_data, "END:VEVENT\nEND:VCALENDAR");
 	
