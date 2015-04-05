@@ -28,6 +28,7 @@
 
 static GtkWidget *window = NULL;
 static GtkWidget *headerbar = NULL;
+static GtkWidget *root_stack = NULL;
 static GtkWidget *stack = NULL;
 static GtkWidget *drawing = NULL;
 static GtkWidget *text_entry = NULL;
@@ -77,6 +78,20 @@ static GtkWidget *wlan_entry_psk = NULL;
 static GtkWidget *wlan_check_hidden = NULL;
 static GtkWidget *wlan_combo_auth = NULL;
 static GtkWidget *stack_switcher_sidebar = NULL;
+static GtkWidget *button_generate = NULL;
+
+static void gtk_set_output(void)
+{
+	gtk_widget_queue_draw(drawing);
+	gtk_stack_set_visible_child_name(GTK_STACK(root_stack), "output");
+	gtk_button_set_label(GTK_BUTTON(button_generate), "Back");
+}
+
+static void gtk_set_input(void)
+{
+	gtk_stack_set_visible_child_name(GTK_STACK(root_stack), "input");
+	gtk_button_set_label(GTK_BUTTON(button_generate), "Generate");
+}
 
 static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -164,9 +179,7 @@ static void cb_clicked_text_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -223,9 +236,7 @@ static void cb_clicked_contact_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -349,9 +360,7 @@ static void cb_clicked_sms_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -420,9 +429,7 @@ static void cb_clicked_call_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -491,9 +498,7 @@ static void cb_clicked_geo_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -729,9 +734,7 @@ static void cb_clicked_cal_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -823,9 +826,7 @@ static void cb_clicked_mail_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -904,9 +905,7 @@ static void cb_clicked_wlan_generate(GtkWidget *button, gpointer data)
 	{
 		case ERR_NO_ERROR:
 		{
-			gtk_widget_queue_draw(drawing);
-			gtk_stack_set_visible_child_name(GTK_STACK(stack), "output_code");
-			gtk_list_box_select_row(GTK_LIST_BOX(stack_switcher_sidebar), gtk_list_box_get_row_at_index(GTK_LIST_BOX(stack_switcher_sidebar), 8));
+			gtk_set_output();
 			
 			break;
 		}
@@ -956,8 +955,7 @@ static void cb_selected_stack_switcher(GtkListBox *box, GtkListBoxRow *row, gpoi
 		"input_geo",
 		"input_cal",
 		"input_mail",
-		"input_wlan",
-		"output_code"
+		"input_wlan"
 	};
 	
 	UNUSED(box);
@@ -971,16 +969,23 @@ static void cb_clicked_generate(GtkWidget *button, gpointer data)
 	UNUSED(button);
 	UNUSED(data);
 	
-	switch(gtk_list_box_row_get_index(gtk_list_box_get_selected_row(GTK_LIST_BOX(stack_switcher_sidebar))))
+	if(strcmp(gtk_stack_get_visible_child_name(GTK_STACK(root_stack)), "input") == 0)
 	{
-		case 0: { cb_clicked_text_generate(NULL, NULL); break; }
-		case 1: { cb_clicked_contact_generate(NULL, NULL); break; }
-		case 2: { cb_clicked_sms_generate(NULL, NULL); break; }
-		case 3: { cb_clicked_call_generate(NULL, NULL); break; }
-		case 4: { cb_clicked_geo_generate(NULL, NULL); break; }
-		case 5: { cb_clicked_cal_generate(NULL, NULL); break; }
-		case 6: { cb_clicked_mail_generate(NULL, NULL); break; }
-		case 7: { cb_clicked_wlan_generate(NULL, NULL); break; }
+		switch(gtk_list_box_row_get_index(gtk_list_box_get_selected_row(GTK_LIST_BOX(stack_switcher_sidebar))))
+		{
+			case 0: { cb_clicked_text_generate(NULL, NULL); break; }
+			case 1: { cb_clicked_contact_generate(NULL, NULL); break; }
+			case 2: { cb_clicked_sms_generate(NULL, NULL); break; }
+			case 3: { cb_clicked_call_generate(NULL, NULL); break; }
+			case 4: { cb_clicked_geo_generate(NULL, NULL); break; }
+			case 5: { cb_clicked_cal_generate(NULL, NULL); break; }
+			case 6: { cb_clicked_mail_generate(NULL, NULL); break; }
+			case 7: { cb_clicked_wlan_generate(NULL, NULL); break; }
+		}
+	}
+	else
+	{
+		gtk_set_input();
 	}
 }
 
@@ -1016,14 +1021,13 @@ void gtk_window_init(void)
 	GtkWidget *stack_switcher_sidebar_label_mail = gtk_label_new("E-Mail");
 	GtkWidget *stack_switcher_sidebar_box_wlan = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	GtkWidget *stack_switcher_sidebar_label_wlan = gtk_label_new("WLAN");
-	GtkWidget *stack_switcher_sidebar_box_code = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	GtkWidget *stack_switcher_sidebar_label_code = gtk_label_new(NULL);
 	stack_switcher_sidebar = gtk_list_box_new();
 	GtkWidget *stack_switcher_sidebar_scrolled = gtk_scrolled_window_new(NULL, NULL);
-	GtkWidget *button_generate = gtk_button_new_with_label("Generate");
+	button_generate = gtk_button_new_with_label("Generate");
 	GtkWidget *root_horizontal_pane = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
 	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
+	root_stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
 	GtkWidget *text_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *text_label = gtk_label_new(NULL);
@@ -1639,9 +1643,12 @@ void gtk_window_init(void)
 	gtk_stack_add_titled(GTK_STACK(stack), cal_scrolled, "input_cal", "Calendar event");
 	gtk_stack_add_titled(GTK_STACK(stack), mail_scrolled, "input_mail", "E-Mail");
 	gtk_stack_add_titled(GTK_STACK(stack), wlan_scrolled, "input_wlan", "WLAN");
-	gtk_stack_add_titled(GTK_STACK(stack), drawing, "output_code", "Generated QR code");
+	gtk_stack_add_titled(GTK_STACK(root_stack), root_horizontal_pane, "input", "Input");
+	gtk_stack_add_titled(GTK_STACK(root_stack), drawing, "output", "Output");
 	gtk_stack_set_transition_type(GTK_STACK(stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
 	gtk_stack_set_visible_child_name(GTK_STACK(stack), "input_text");
+	gtk_stack_set_transition_type(GTK_STACK(root_stack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+	gtk_stack_set_visible_child_name(GTK_STACK(root_stack), "input");
 	
 	gtk_container_set_border_width(GTK_CONTAINER(stack_switcher_sidebar_box_text), 10);
 	gtk_widget_set_halign(stack_switcher_sidebar_label_text, GTK_ALIGN_START);
@@ -1675,11 +1682,6 @@ void gtk_window_init(void)
 	gtk_widget_set_halign(stack_switcher_sidebar_label_wlan, GTK_ALIGN_START);
 	gtk_box_pack_start(GTK_BOX(stack_switcher_sidebar_box_wlan), stack_switcher_sidebar_label_wlan, TRUE, TRUE, 0);
 	gtk_list_box_insert(GTK_LIST_BOX(stack_switcher_sidebar), stack_switcher_sidebar_box_wlan, -1);
-	gtk_container_set_border_width(GTK_CONTAINER(stack_switcher_sidebar_box_code), 10);
-	gtk_label_set_markup(GTK_LABEL(stack_switcher_sidebar_label_code), "<b>Generated QR code</b>");
-	gtk_widget_set_halign(stack_switcher_sidebar_label_code, GTK_ALIGN_START);
-	gtk_box_pack_start(GTK_BOX(stack_switcher_sidebar_box_code), stack_switcher_sidebar_label_code, TRUE, TRUE, 0);
-	gtk_list_box_insert(GTK_LIST_BOX(stack_switcher_sidebar), stack_switcher_sidebar_box_code, -1);
 	gtk_paned_set_position(GTK_PANED(root_horizontal_pane), 175);
 	gtk_container_add(GTK_CONTAINER(stack_switcher_sidebar_scrolled), stack_switcher_sidebar);
 	gtk_paned_pack1(GTK_PANED(root_horizontal_pane), stack_switcher_sidebar_scrolled, FALSE, FALSE);
@@ -1726,7 +1728,7 @@ void gtk_window_init(void)
 	g_signal_connect(G_OBJECT(cal_time_zones_dst_end), "toggled", G_CALLBACK(cb_toggled_cal_dst), NULL);
 	
 	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
-	gtk_container_add(GTK_CONTAINER(window), root_horizontal_pane);
+	gtk_container_add(GTK_CONTAINER(window), root_stack);
 	
 	gtk_widget_show_all(window);
 }
