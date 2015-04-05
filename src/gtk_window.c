@@ -90,6 +90,10 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	guint x = 0;
 	guint y = 0;
 	guint index = 0;
+	cairo_text_extents_t extents;
+	gdouble text_x = 0;
+	gdouble text_y = 0;
+	gchar *text = "Nothing generated yet.";
 	
 	UNUSED(data);
 	
@@ -116,7 +120,19 @@ static gboolean cb_drawing(GtkWidget *widget, cairo_t *cr, gpointer data)
 	qr_code_size = qr_get_size();
 	
 	// QR code rendering
-	if(qr_code_data != NULL)
+	if(qr_code_data == NULL)
+	{
+		cairo_set_font_size(cr, 15.0);
+		
+		cairo_text_extents(cr, text, &extents);
+		text_x = offset_x + (size / 2) - (extents.width / 2 + extents.x_bearing);
+		text_y = offset_y + (size / 2) - (extents.height / 2 + extents.y_bearing);
+		
+		cairo_move_to(cr, text_x, text_y);
+		cairo_set_source_rgb(cr, 0, 0, 0);
+		cairo_show_text(cr, text);
+	}
+	else
 	{
 		for(y = 0; y < (guint)qr_code_size; y++)
 		{
@@ -1009,7 +1025,7 @@ void gtk_window_init(void)
 	headerbar = gtk_header_bar_new();
 	stack = gtk_stack_new();
 	drawing = gtk_drawing_area_new();
-	GtkWidget *text_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *text_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *text_label = gtk_label_new(NULL);
 	text_entry = gtk_entry_new();
 	GtkWidget *text_scrolled = gtk_scrolled_window_new(NULL, NULL);
@@ -1022,7 +1038,7 @@ void gtk_window_init(void)
 	GtkWidget *contact_button_file_label = gtk_label_new("vCard (.vcf) file");
 	GtkWidget *contact_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	contact_button_file = gtk_file_chooser_button_new("Select a .vcf (vCard) contact", GTK_FILE_CHOOSER_ACTION_OPEN);
-	GtkWidget *contact_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *contact_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *contact_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	contact_entry_first_name = gtk_entry_new();
 	contact_entry_last_name = gtk_entry_new();
@@ -1053,13 +1069,13 @@ void gtk_window_init(void)
 	sms_entry_phone = gtk_entry_new();
 	sms_entry_text = gtk_entry_new();
 	sms_label_size = gtk_label_new("0 characters");
-	GtkWidget *sms_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *sms_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *sms_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *call_label = gtk_label_new(NULL);
 	GtkWidget *call_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *call_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	call_entry = gtk_entry_new();
-	GtkWidget *call_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *call_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *call_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *geo_label = gtk_label_new(NULL);
 	GtkWidget *geo_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
@@ -1072,7 +1088,7 @@ void gtk_window_init(void)
 	geo_radio_south = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(geo_radio_north), "South");
 	geo_radio_west = gtk_radio_button_new_with_label(NULL, "West");
 	geo_radio_east = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(geo_radio_west), "East");
-	GtkWidget *geo_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *geo_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *geo_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *geo_horizontal_coords = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	GtkWidget *geo_vertical_coords_latitude = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
@@ -1094,7 +1110,7 @@ void gtk_window_init(void)
 	cal_time_zones = gtk_combo_box_text_new();
 	cal_time_zones_dst_start = gtk_check_button_new_with_label("Summer time (DST)");
 	cal_time_zones_dst_end = gtk_check_button_new_with_label("Summer time (DST)");
-	GtkWidget *cal_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *cal_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *cal_horizontal_date_pickers = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	GtkWidget *cal_vertical_date_pickers_start = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *cal_vertical_date_pickers_end = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
@@ -1110,7 +1126,7 @@ void gtk_window_init(void)
 	GtkWidget *mail_label = gtk_label_new(NULL);
 	GtkWidget *mail_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *mail_scrolled = gtk_scrolled_window_new(NULL, NULL);
-	GtkWidget *mail_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *mail_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *mail_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	mail_entry_to = gtk_entry_new();
 	mail_entry_subject = gtk_entry_new();
@@ -1119,7 +1135,7 @@ void gtk_window_init(void)
 	GtkWidget *wlan_label = gtk_label_new(NULL);
 	GtkWidget *wlan_vertical = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
 	GtkWidget *wlan_scrolled = gtk_scrolled_window_new(NULL, NULL);
-	GtkWidget *wlan_button_clear = gtk_button_new_with_label("Clear");
+	GtkWidget *wlan_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *wlan_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	wlan_combo_auth = gtk_combo_box_text_new();
 	wlan_entry_ssid = gtk_entry_new();
