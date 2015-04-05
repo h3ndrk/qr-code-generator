@@ -358,20 +358,20 @@ static void cb_clicked_contact_clear(GtkWidget *button, gpointer data)
 	UNUSED(button);
 	UNUSED(data);
 	
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_first_name), "First name");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_last_name), "Last name");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_title), "Title");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_street), "Street");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_postal_code), "Postal code");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_city), "City");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_country), "Country");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_company), "Company/organization");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_personal), "Email (personal)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_business), "Email (business)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_personal), "Phone (personal)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_mobile), "Phone (mobile)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_business), "Phone (business)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "Website");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_first_name), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_last_name), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_title), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_street), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_postal_code), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_city), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_country), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_company), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_personal), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_business), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_personal), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_mobile), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_business), "");
+	gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "");
 }
 
 static void cb_clicked_sms_generate(GtkWidget *button, gpointer data)
@@ -1038,6 +1038,9 @@ static void cb_clicked_export(GtkWidget *button, gpointer data)
 	GtkWidget *export_size = NULL;
 	GtkWidget *file_chooser_dialog = NULL;
 	
+	UNUSED(button);
+	UNUSED(data);
+	
 	export_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	export_size_label = gtk_label_new("QR code size (in pixel):");
 	export_size = gtk_spin_button_new_with_range(0, 2048, 1);
@@ -1106,7 +1109,7 @@ void gtk_window_init(void)
 	GtkWidget *contact_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	GtkWidget *contact_description_label = gtk_label_new("Either vCard file import or manual information entering are supported. Modify the generated vCard at the bottom.");
 	GtkWidget *contact_button_file_label = gtk_label_new("vCard (.vcf) file");
-	GtkWidget *contact_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	GtkWidget *contact_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	contact_button_file = gtk_file_chooser_button_new("Select a .vcf (vCard) contact", GTK_FILE_CHOOSER_ACTION_OPEN);
 	GtkWidget *contact_button_clear = gtk_button_new_with_label("Clear and reset");
 	GtkWidget *contact_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -1190,7 +1193,7 @@ void gtk_window_init(void)
 	GtkWidget *cal_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	GtkWidget *cal_description_label = gtk_label_new("Either iCalendar file import or manual information entering are supported. Modify the generated iCalendar at the bottom.");
 	GtkWidget *cal_button_file_label = gtk_label_new("iCalendar (.ics) file");
-	GtkWidget *cal_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+	GtkWidget *cal_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	cal_button_file = gtk_file_chooser_button_new("Select a .ics (iCalendar) file", GTK_FILE_CHOOSER_ACTION_OPEN);
 	GtkWidget *cal_text_view_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	GtkWidget *cal_text_view = gtk_text_view_new();
@@ -1245,20 +1248,20 @@ void gtk_window_init(void)
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_phone_mobile), "Phone (mobile)");
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_phone_business), "Phone (business)");
 	gtk_entry_set_placeholder_text(GTK_ENTRY(contact_entry_website), "Website");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_first_name), "First name");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_last_name), "Last name");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_title), "Title");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_street), "Street");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_postal_code), "Postal code");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_city), "City");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_country), "Country");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_company), "Company/organization");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_personal), "Email (personal)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_email_business), "Email (business)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_personal), "Phone (personal)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_mobile), "Phone (mobile)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_business), "Phone (business)");
-	gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "Website");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_first_name), "First name");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_last_name), "Last name");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_title), "Title");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_street), "Street");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_postal_code), "Postal code");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_city), "City");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_country), "Country");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_company), "Company/organization");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_email_personal), "Email (personal)");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_email_business), "Email (business)");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_personal), "Phone (personal)");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_mobile), "Phone (mobile)");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_phone_business), "Phone (business)");
+	// gtk_entry_set_text(GTK_ENTRY(contact_entry_website), "Website");
 	gtk_container_set_border_width(GTK_CONTAINER(contact_vertical), 15);
 	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(contact_text_view), 5);
 	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(contact_text_view), 5);
