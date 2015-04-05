@@ -18,36 +18,36 @@ Simple graphical user interface for generating QR-Codes
 
 ### Text/URL
 
-![Text/URL](imgs/text.png)
+![Text/URL](screenshots/text.png)
 
 ### Contact
 
-![Contact](imgs/contact.png)
+![Contact](screenshots/contact.png)
 
 ### SMS
 
-![SMS](imgs/sms.png)
+![SMS](screenshots/sms.png)
 
 ### Call/Phone number
 
-![Call/Phone number](imgs/call.png)
+![Call/Phone number](screenshots/call.png)
 
 ### Geolocation
 
-![Geolocation](imgs/geo.png)
+![Geolocation](screenshots/geo.png)
 
 ### Calendar
 
-![Calendar](imgs/cal.png)
+![Calendar](screenshots/cal.png)
 
 ### E-Mail
 
-![E-Mail](imgs/mail.png)
+![E-Mail](screenshots/mail.png)
 
 ### WLAN
 
-![WLAN](imgs/wlan.png)
+![WLAN](screenshots/wlan.png)
 
 ### Generated QR-Code
 
-![Generated QR-Code](imgs/code.png)
+![Generated QR-Code](screenshots/code.png)
