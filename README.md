@@ -14,7 +14,7 @@ Simple graphical user interface for generating QR-Codes.
 
 * Text
 * URL
-* Contact (name, address, company, email, phone number, website)
+* Contact (name, address, company, e-mail, phone number, website)
 * SMS (recipient, message)
 * Call/Phone number
 * Geolocation (latitude, longitude)
@@ -59,3 +59,9 @@ Simple graphical user interface for generating QR-Codes.
 ### Generated QR-Code
 
 ![Generated QR-Code](screenshots/code.png)
+
+## License
+
+lastest GPL-license (see LICENSE-file)
+
+Copyright (C) 2015 NIPE-SYSTEMS, [http://www.nipe-systems.de](http://www.nipe-systems.de)
