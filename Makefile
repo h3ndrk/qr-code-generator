@@ -30,8 +30,8 @@ all: qr_code_generator
 
 # Compile main program
 
-qr_code_generator: init bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o bin/obj/icalendar_generator.o
-	$(CC) bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o bin/obj/icalendar_generator.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
+qr_code_generator: init bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o bin/obj/icalendar_generator.o bin/obj/gtk_text.o bin/obj/gtk_contact.o bin/obj/gtk_sms.o bin/obj/gtk_call.o bin/obj/gtk_geo.o bin/obj/gtk_cal.o bin/obj/gtk_mail.o bin/obj/gtk_wlan.o
+	$(CC) bin/obj/qr_code_generator.o bin/obj/gtk_window.o bin/obj/qr_generator.o bin/obj/vcard_generator.o bin/obj/icalendar_generator.o bin/obj/gtk_text.o bin/obj/gtk_contact.o bin/obj/gtk_sms.o bin/obj/gtk_call.o bin/obj/gtk_geo.o bin/obj/gtk_cal.o bin/obj/gtk_mail.o bin/obj/gtk_wlan.o $(CFLAGS) -o bin/qr-code-generator $(LIBS)
 
 # Initializes directories
 
@@ -46,6 +46,30 @@ bin/obj/qr_code_generator.o: src/qr_code_generator.c
 
 bin/obj/gtk_window.o: src/gtk_window.c
 	$(CC) $(CFLAGS) -c -o bin/obj/gtk_window.o src/gtk_window.c $(LIBS)
+
+bin/obj/gtk_text.o: src/gtk_text.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_text.o src/gtk_text.c $(LIBS)
+
+bin/obj/gtk_contact.o: src/gtk_contact.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_contact.o src/gtk_contact.c $(LIBS)
+
+bin/obj/gtk_sms.o: src/gtk_sms.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_sms.o src/gtk_sms.c $(LIBS)
+
+bin/obj/gtk_call.o: src/gtk_call.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_call.o src/gtk_call.c $(LIBS)
+
+bin/obj/gtk_geo.o: src/gtk_geo.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_geo.o src/gtk_geo.c $(LIBS)
+
+bin/obj/gtk_cal.o: src/gtk_cal.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_cal.o src/gtk_cal.c $(LIBS)
+
+bin/obj/gtk_mail.o: src/gtk_mail.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_mail.o src/gtk_mail.c $(LIBS)
+
+bin/obj/gtk_wlan.o: src/gtk_wlan.c
+	$(CC) $(CFLAGS) -c -o bin/obj/gtk_wlan.o src/gtk_wlan.c $(LIBS)
 
 bin/obj/qr_generator.o: src/qr_generator.c
 	$(CC) $(CFLAGS) -c -o bin/obj/qr_generator.o src/qr_generator.c $(LIBS)
