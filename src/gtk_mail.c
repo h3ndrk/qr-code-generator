@@ -102,6 +102,8 @@ GtkWidget *gtk_mail_qr_new(void)
 	GtkWidget *gtk_mail_horizontal_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 	gtk_mail_entry_to = gtk_entry_new();
 	gtk_mail_entry_subject = gtk_entry_new();
+	GtkWidget *gtk_mail_text_view_scrolled_frame = gtk_frame_new(NULL);
+	GtkWidget *gtk_mail_text_view_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	GtkWidget *gtk_mail_text_view = gtk_text_view_new();
 	gtk_mail_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_mail_text_view));
 	
@@ -114,12 +116,15 @@ GtkWidget *gtk_mail_qr_new(void)
 	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(gtk_mail_text_view), 5);
 	gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(gtk_mail_text_view), 2);
 	gtk_text_view_set_pixels_below_lines(GTK_TEXT_VIEW(gtk_mail_text_view), 2);
+	gtk_widget_set_size_request(gtk_mail_text_view_scrolled, -1, 200);
 	gtk_text_buffer_set_text(gtk_mail_text_buffer, "E-mail message", -1);
 	
 	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_label, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_entry_to, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_entry_subject, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_text_view, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(gtk_mail_text_view_scrolled), gtk_mail_text_view);
+	gtk_container_add(GTK_CONTAINER(gtk_mail_text_view_scrolled_frame), gtk_mail_text_view_scrolled);
+	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_text_view_scrolled_frame, FALSE, FALSE, 0);
 	gtk_box_pack_end(GTK_BOX(gtk_mail_horizontal_buttons), gtk_mail_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(gtk_mail_vertical), gtk_mail_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(gtk_mail_scrolled), gtk_mail_vertical);

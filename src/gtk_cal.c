@@ -334,6 +334,7 @@ GtkWidget *gtk_cal_qr_new(void)
 	GtkWidget *gtk_cal_button_file_label = gtk_label_new("iCalendar (.ics) file");
 	GtkWidget *gtk_cal_button_file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
 	gtk_cal_button_file = gtk_file_chooser_button_new("Select a .ics (iCalendar) file", GTK_FILE_CHOOSER_ACTION_OPEN);
+	GtkWidget *gtk_cal_text_view_scrolled_frame = gtk_frame_new(NULL);
 	GtkWidget *gtk_cal_text_view_scrolled = gtk_scrolled_window_new(NULL, NULL);
 	GtkWidget *gtk_cal_text_view = gtk_text_view_new();
 	gtk_cal_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_cal_text_view));
@@ -607,7 +608,8 @@ GtkWidget *gtk_cal_qr_new(void)
 	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(gtk_cal_text_view), 5);
 	gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(gtk_cal_text_view), 2);
 	gtk_text_view_set_pixels_below_lines(GTK_TEXT_VIEW(gtk_cal_text_view), 2);
-	// gtk_text_view_set_monospace(GTK_TEXT_VIEW(gtk_cal_text_view), TRUE);
+	gtk_text_view_set_monospace(GTK_TEXT_VIEW(gtk_cal_text_view), TRUE);
+	gtk_widget_set_size_request(gtk_cal_text_view_scrolled, -1, 100);
 	GtkFileFilter *filter_cal = gtk_file_filter_new();
 	gtk_file_filter_add_pattern(filter_cal, "*.ics");
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(gtk_cal_button_file), filter_cal);
@@ -638,7 +640,8 @@ GtkWidget *gtk_cal_qr_new(void)
 	gtk_box_pack_start(GTK_BOX(gtk_cal_vertical), gtk_cal_horizontal_date_pickers, FALSE, FALSE, 0);
 	// gtk_box_pack_start(GTK_BOX(gtk_cal_vertical), gtk_cal_time_zones, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(gtk_cal_text_view_scrolled), gtk_cal_text_view);
-	gtk_box_pack_start(GTK_BOX(gtk_cal_vertical), gtk_cal_text_view_scrolled, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(gtk_cal_text_view_scrolled_frame), gtk_cal_text_view_scrolled);
+	gtk_box_pack_start(GTK_BOX(gtk_cal_vertical), gtk_cal_text_view_scrolled_frame, FALSE, FALSE, 0);
 	gtk_box_pack_end(GTK_BOX(gtk_cal_horizontal_buttons), gtk_cal_button_clear, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(gtk_cal_vertical), gtk_cal_horizontal_buttons, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(gtk_cal_scrolled), gtk_cal_vertical);
