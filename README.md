@@ -2,6 +2,11 @@
 
 Simple graphical user interface for generating QR-Codes.
 
+## Requirements
+
+* GTK (3.16, to expand compatibility remove `gtk_text_view_set_monospace()` from `gtk_cal.c` and `gtk_contact.c`)
+* [libqrencode](https://github.com/fukuchi/libqrencode)
+
 ## Features
 
 * Simple and clean UI
