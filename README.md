@@ -60,6 +60,10 @@ Simple graphical user interface for generating QR-Codes.
 
 ![Generated QR-Code](screenshots/code.png)
 
+### Export QR-Code
+
+![Export QR-Code](screenshots/export.png)
+
 ## License
 
 lastest GPL-license (see LICENSE-file)
